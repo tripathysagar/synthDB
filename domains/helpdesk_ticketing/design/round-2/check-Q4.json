@@ -1,0 +1,35 @@
+{
+  "check": {
+    "id": "Q4",
+    "question": "Which ticket IDs had a customer message by the end of March 31, 2026, but no subsequent public human agent reply on that ticket by then?",
+    "sql": "WITH first_customer AS (\n  SELECT e.ticket_id,\n         e.occurred_at,\n         e.seq,\n         ROW_NUMBER() OVER (PARTITION BY e.ticket_id ORDER BY e.occurred_at, e.seq) AS rn\n  FROM ticket_messages m\n  JOIN ticket_events e ON e.event_id = m.event_id\n  WHERE m.author_kind = 'customer'\n    AND e.occurred_at < '2026-04-01 00:00:00'\n)\nSELECT fc.ticket_id\nFROM first_customer fc\nWHERE fc.rn = 1\n  AND NOT EXISTS (\n    SELECT 1\n    FROM ticket_messages r\n    JOIN ticket_events re ON re.event_id = r.event_id\n    JOIN agents a ON a.agent_id = r.author_agent_id\n    WHERE re.ticket_id = fc.ticket_id\n      AND r.author_kind = 'agent'\n      AND r.visibility = 'public'\n      AND r.is_automated = 0\n      AND a.is_human = 1\n      AND (re.occurred_at > fc.occurred_at OR (re.occurred_at = fc.occurred_at AND re.seq > fc.seq))\n      AND re.occurred_at < '2026-04-01 00:00:00'\n  )\nORDER BY fc.ticket_id;",
+    "rows": [
+      [
+        6001
+      ],
+      [
+        6005
+      ],
+      [
+        6006
+      ]
+    ],
+    "wrong_sql": "WITH first_customer AS (\n  SELECT e.ticket_id,\n         e.occurred_at,\n         e.seq,\n         ROW_NUMBER() OVER (PARTITION BY e.ticket_id ORDER BY e.occurred_at, e.seq) AS rn\n  FROM ticket_messages m\n  JOIN ticket_events e ON e.event_id = m.event_id\n  WHERE m.author_kind = 'customer'\n    AND e.occurred_at < '2026-04-01 00:00:00'\n)\nSELECT fc.ticket_id\nFROM first_customer fc\nWHERE fc.rn = 1\n  AND NOT EXISTS (\n    SELECT 1\n    FROM ticket_messages r\n    JOIN ticket_events re ON re.event_id = r.event_id\n    JOIN agents a ON a.agent_id = r.author_agent_id\n    WHERE re.ticket_id = fc.ticket_id\n      AND r.author_kind = 'agent'\n      AND r.is_automated = 0\n      AND a.is_human = 1\n      AND (re.occurred_at > fc.occurred_at OR (re.occurred_at = fc.occurred_at AND re.seq > fc.seq))\n      AND re.occurred_at < '2026-04-01 00:00:00'\n  )\nORDER BY fc.ticket_id;",
+    "witness": "Ticket 6001: customer message 2026-03-15 10:00 (event 60002) is followed within March only by a PRIVATE human agent note (event 60003, agent 1002, 2026-03-16 09:00) and a PUBLIC but AUTOMATED system acknowledgement (event 60004, is_automated=1, 2026-03-16 09:05); the public human reply from agent 1002 (event 60006) lands 2026-04-05, after the March cutoff. Gold includes 6001; wrong_sql drops the visibility='public' predicate and counts the private note as a qualifying reply, so it drops 6001 (wrong result: [[6005],[6006]]). Ticket 6002 (public human reply 2026-03-20, event 60009) correctly drops out of both; 6004's first customer message is 2026-04-02 (outside March) so it is excluded from both; 6005's only public human reply (event 60015, 2026-03-10) precedes its first customer message (2026-03-12) so it is included by both; 6006's only subsequent public agent reply (event 60020, 2026-03-15) is from bot agent 1004 (is_human=0) so it is included by both."
+  },
+  "findings": [],
+  "invalid_inserts": [
+    {
+      "sql": "INSERT INTO ticket_assignment_events (event_id, ticket_id, from_team_id, to_team_id) VALUES (20002, 2001, 90, 9999);",
+      "constraint": "SQLITE_CONSTRAINT_FOREIGNKEY"
+    },
+    {
+      "sql": "INSERT INTO ticket_messages (event_id, ticket_id, author_kind, author_agent_id, visibility, is_automated, body) VALUES (20002, 2001, 'agent', 9999, 'public', 0, 'probe: nonexistent agent');",
+      "constraint": "SQLITE_CONSTRAINT_FOREIGNKEY"
+    },
+    {
+      "sql": "INSERT INTO ticket_status_events (event_id, ticket_id, from_status, to_status, reason) VALUES (40002, 2001, 'open', 'closed', 'probe: (event_id, ticket_id) pair does not exist in ticket_events');",
+      "constraint": "SQLITE_CONSTRAINT_FOREIGNKEY"
+    }
+  ]
+}

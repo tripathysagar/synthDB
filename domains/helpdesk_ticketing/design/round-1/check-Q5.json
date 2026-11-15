@@ -1,0 +1,31 @@
+{
+  "check": {
+    "id": "Q5",
+    "question": "Return up to three team IDs and their positive backlog counts at the end of March 31, 2026, ordered by count descending and then team ID ascending.",
+    "ordered": true,
+    "sql": "WITH cutoff AS (SELECT '2026-04-01 00:00:00' AS cutoff_at),\nticket_state AS (\n  SELECT t.ticket_id,\n         (SELECT se.to_status\n            FROM ticket_events e\n            JOIN ticket_status_events se ON se.event_id = e.event_id\n           WHERE e.ticket_id = t.ticket_id\n             AND e.occurred_at < (SELECT cutoff_at FROM cutoff)\n           ORDER BY e.occurred_at DESC, e.seq DESC\n           LIMIT 1) AS status,\n         (SELECT ae.to_team_id\n            FROM ticket_events e\n            JOIN ticket_assignment_events ae ON ae.event_id = e.event_id\n           WHERE e.ticket_id = t.ticket_id\n             AND e.occurred_at < (SELECT cutoff_at FROM cutoff)\n           ORDER BY e.occurred_at DESC, e.seq DESC\n           LIMIT 1) AS team_id\n    FROM tickets t\n   WHERE t.created_at < (SELECT cutoff_at FROM cutoff)\n)\nSELECT ts.team_id, COUNT(*) AS backlog_count\n  FROM ticket_state ts\n WHERE ts.status IN (SELECT status_code FROM ticket_statuses WHERE counts_as_backlog = 1)\n GROUP BY ts.team_id\nHAVING COUNT(*) > 0\n ORDER BY backlog_count DESC, ts.team_id ASC\n LIMIT 3;",
+    "rows": [
+      [
+        10,
+        6
+      ],
+      [
+        20,
+        5
+      ],
+      [
+        30,
+        4
+      ]
+    ],
+    "wrong_sql": "WITH cutoff AS (SELECT '2026-04-01 00:00:00' AS cutoff_at),\nticket_state AS (\n  SELECT t.ticket_id,\n         (SELECT se.to_status\n            FROM ticket_events e\n            JOIN ticket_status_events se ON se.event_id = e.event_id\n           WHERE e.ticket_id = t.ticket_id\n             AND e.occurred_at < (SELECT cutoff_at FROM cutoff)\n           ORDER BY e.occurred_at DESC, e.seq DESC\n           LIMIT 1) AS status,\n         (SELECT ae.to_team_id\n            FROM ticket_events e\n            JOIN ticket_assignment_events ae ON ae.event_id = e.event_id\n           WHERE e.ticket_id = t.ticket_id\n             AND e.occurred_at < (SELECT cutoff_at FROM cutoff)\n           ORDER BY e.occurred_at DESC, e.seq DESC\n           LIMIT 1) AS team_id\n    FROM tickets t\n   WHERE t.created_at < (SELECT cutoff_at FROM cutoff)\n)\nSELECT ts.team_id, COUNT(*) AS backlog_count\n  FROM ticket_state ts\n WHERE ts.status IN (SELECT status_code FROM ticket_statuses WHERE counts_as_backlog = 1)\n GROUP BY ts.team_id\nHAVING COUNT(*) > 0\n ORDER BY backlog_count DESC, ts.team_id DESC\n LIMIT 3;",
+    "witness": "Teams 30 and 40 both end the March cutoff with exactly 4 backlog tickets (team 30: tickets 12-15; team 40: tickets 16-19). The brief breaks the 4-4 tie by team ID ascending, so the third row is (30, 4); the wrong query only reverses the tie-break (ORDER BY backlog_count DESC, ts.team_id DESC) and returns (40, 4) instead. Note ticket 1 is pending (not open) at the cutoff, ticket 3 reopens twice on 2026-03-10 (seq 3 open, seq 4 closed, seq 5 open) and is counted once under team 10, and the 2026-04-01 00:00:00 events (ticket 1 close, ticket 2 transfer to team 50 and close/reopen) are excluded by the exclusive cutoff, leaving team 50 with zero backlog and out of the positive-only result."
+  },
+  "findings": [],
+  "invalid_inserts": [
+    {
+      "sql": "INSERT INTO ticket_assignment_events (event_id, ticket_id, from_team_id, to_team_id) VALUES (402, 4, NULL, 999);",
+      "constraint": "SQLITE_CONSTRAINT_FOREIGNKEY"
+    }
+  ]
+}

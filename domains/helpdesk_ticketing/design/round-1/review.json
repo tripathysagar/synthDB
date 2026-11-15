@@ -1,0 +1,194 @@
+{
+  "checks": [
+    {
+      "id": "Q1",
+      "question": "Which ticket IDs were open or pending at the end of March 31, 2026?",
+      "sql": "SELECT t.ticket_id\nFROM tickets AS t\nWHERE t.created_at < '2026-04-01 00:00:00'\n  AND (\n    SELECT s.to_status\n    FROM ticket_events AS e\n    JOIN ticket_status_events AS s ON s.event_id = e.event_id\n    WHERE e.ticket_id = t.ticket_id\n      AND e.occurred_at < '2026-04-01 00:00:00'\n    ORDER BY e.occurred_at DESC, e.seq DESC\n    LIMIT 1\n  ) IN ('open', 'pending')\nORDER BY t.ticket_id;",
+      "rows": [
+        [
+          1
+        ],
+        [
+          2
+        ],
+        [
+          3
+        ],
+        [
+          4
+        ],
+        [
+          5
+        ],
+        [
+          6
+        ],
+        [
+          7
+        ],
+        [
+          8
+        ],
+        [
+          9
+        ],
+        [
+          10
+        ],
+        [
+          11
+        ],
+        [
+          12
+        ],
+        [
+          13
+        ],
+        [
+          14
+        ],
+        [
+          15
+        ],
+        [
+          16
+        ],
+        [
+          17
+        ],
+        [
+          18
+        ],
+        [
+          19
+        ]
+      ],
+      "wrong_sql": "SELECT t.ticket_id\nFROM tickets AS t\nWHERE t.created_at <= '2026-04-01 00:00:00'\n  AND (\n    SELECT s.to_status\n    FROM ticket_events AS e\n    JOIN ticket_status_events AS s ON s.event_id = e.event_id\n    WHERE e.ticket_id = t.ticket_id\n      AND e.occurred_at <= '2026-04-01 00:00:00'\n    ORDER BY e.occurred_at DESC, e.seq DESC\n    LIMIT 1\n  ) IN ('open', 'pending')\nORDER BY t.ticket_id;",
+      "witness": "Frozen-fixture fact that separates gold from wrong: event 103 / ticket_status_events 103 moves ticket 1 from pending to closed at exactly 2026-04-01 00:00:00, and the March cutoff is exclusive (occurred_at < '2026-04-01 00:00:00'), so ticket 1 must still be pending in the March snapshot. The wrong query replays events with an inclusive cutoff (shipping assumption: the April 1 midnight boundary belongs to March), which applies event 103 and drops ticket 1, yielding rows 2-19 instead of 1-19. Hand-derived gold replay (order by occurred_at, seq): ticket 1 -> pending (event 102 applies; event 103 excluded); ticket 2 -> open (its three 2026-04-01 00:00:00 events 202/203/204 are all excluded); ticket 3 -> open (302 close, 303/305 reopens; seq 5 wins the same-timestamp tie); tickets 4-19 -> open via their created events (messages carry no status). All 19 fixture tickets were created 2026-02-01 00:00:00, before the cutoff, so none are absent. Derived by hand from the frozen fixture as printed; this review environment exposes no shell/SQLite binary, so rows are literal hand derivations cross-checked against the fixture insert ledger, not pasted query output."
+    },
+    {
+      "id": "Q2",
+      "question": "For every team existing at the end of March 31, 2026, return its ID and number of open or pending tickets it owned then, including zero.",
+      "sql": "WITH cutoff(cutoff_at) AS (SELECT '2026-04-01 00:00:00'),\ncreated AS (\n  SELECT DISTINCT e.ticket_id\n  FROM ticket_events e CROSS JOIN cutoff\n  WHERE e.event_type = 'created' AND e.occurred_at < cutoff.cutoff_at\n),\nlast_status AS (\n  SELECT x.ticket_id, x.to_status\n  FROM (\n    SELECT e.ticket_id, s.to_status,\n           ROW_NUMBER() OVER (PARTITION BY e.ticket_id ORDER BY e.occurred_at DESC, e.seq DESC) AS rn\n    FROM ticket_events e\n    JOIN ticket_status_events s ON s.event_id = e.event_id\n    CROSS JOIN cutoff\n    WHERE e.occurred_at < cutoff.cutoff_at\n  ) x\n  WHERE x.rn = 1\n),\nlast_team AS (\n  SELECT x.ticket_id, x.to_team_id\n  FROM (\n    SELECT e.ticket_id, a.to_team_id,\n           ROW_NUMBER() OVER (PARTITION BY e.ticket_id ORDER BY e.occurred_at DESC, e.seq DESC) AS rn\n    FROM ticket_events e\n    JOIN ticket_assignment_events a ON a.event_id = e.event_id\n    CROSS JOIN cutoff\n    WHERE e.occurred_at < cutoff.cutoff_at\n  ) x\n  WHERE x.rn = 1\n),\nstate AS (\n  SELECT c.ticket_id, ls.to_status, lt.to_team_id\n  FROM created c\n  JOIN last_status ls ON ls.ticket_id = c.ticket_id\n  JOIN last_team lt ON lt.ticket_id = c.ticket_id\n)\nSELECT t.team_id,\n       SUM(CASE WHEN ss.counts_as_backlog = 1 THEN 1 ELSE 0 END) AS backlog_count\nFROM teams t\nCROSS JOIN cutoff\nLEFT JOIN state s ON s.to_team_id = t.team_id\nLEFT JOIN ticket_statuses ss ON ss.status_code = s.to_status\nWHERE t.created_at < cutoff.cutoff_at\nGROUP BY t.team_id\nORDER BY t.team_id;",
+      "rows": [
+        [
+          10,
+          6
+        ],
+        [
+          20,
+          5
+        ],
+        [
+          30,
+          4
+        ],
+        [
+          40,
+          4
+        ],
+        [
+          50,
+          0
+        ]
+      ],
+      "wrong_sql": "WITH cutoff(cutoff_at) AS (SELECT '2026-04-01 00:00:00'),\ncreated AS (\n  SELECT DISTINCT e.ticket_id\n  FROM ticket_events e CROSS JOIN cutoff\n  WHERE e.event_type = 'created' AND e.occurred_at <= cutoff.cutoff_at\n),\nlast_status AS (\n  SELECT x.ticket_id, x.to_status\n  FROM (\n    SELECT e.ticket_id, s.to_status,\n           ROW_NUMBER() OVER (PARTITION BY e.ticket_id ORDER BY e.occurred_at DESC, e.seq DESC) AS rn\n    FROM ticket_events e\n    JOIN ticket_status_events s ON s.event_id = e.event_id\n    CROSS JOIN cutoff\n    WHERE e.occurred_at <= cutoff.cutoff_at\n  ) x\n  WHERE x.rn = 1\n),\nlast_team AS (\n  SELECT x.ticket_id, x.to_team_id\n  FROM (\n    SELECT e.ticket_id, a.to_team_id,\n           ROW_NUMBER() OVER (PARTITION BY e.ticket_id ORDER BY e.occurred_at DESC, e.seq DESC) AS rn\n    FROM ticket_events e\n    JOIN ticket_assignment_events a ON a.event_id = e.event_id\n    CROSS JOIN cutoff\n    WHERE e.occurred_at <= cutoff.cutoff_at\n  ) x\n  WHERE x.rn = 1\n),\nstate AS (\n  SELECT c.ticket_id, ls.to_status, lt.to_team_id\n  FROM created c\n  JOIN last_status ls ON ls.ticket_id = c.ticket_id\n  JOIN last_team lt ON lt.ticket_id = c.ticket_id\n)\nSELECT t.team_id,\n       SUM(CASE WHEN ss.counts_as_backlog = 1 THEN 1 ELSE 0 END) AS backlog_count\nFROM teams t\nCROSS JOIN cutoff\nLEFT JOIN state s ON s.to_team_id = t.team_id\nLEFT JOIN ticket_statuses ss ON ss.status_code = s.to_status\nWHERE t.created_at <= cutoff.cutoff_at\nGROUP BY t.team_id\nORDER BY t.team_id;",
+      "witness": "Ticket 2 is transferred from team 10 to team 50 at exactly 2026-04-01 00:00:00 (event 202), and ticket 1 closes at that same instant (event 103, pending->closed). The March cutoff is exclusive (occurred_at < '2026-04-01 00:00:00'), so team 10 keeps ticket 2 as open and ticket 1 stays pending: team 10 = tickets {1,2,3,4,5,6} = 6, team 20 = tickets {7,8,9,10,11} = 5, team 30 = tickets {12,13,14,15} = 4, team 40 = tickets {16,17,18,19} = 4, and team 50 (created 2026-01-01, no March tickets) = 0. The wrong inclusive '<=' cutoff replays the 2026-04-01 00:00:00 events: ticket 1 becomes closed (team 10 loses it) and ticket 2 moves to team 50 as open (ticket 2's open->closed->open pair at the same timestamp ends open), yielding team 10 = 4 and team 50 = 1. Ticket 3's events at 2026-03-10 10:00:00 (seq 3,4,5) replay to open, keeping it in team 10's backlog. Hand-replayed March states: t1 pending@10, t2 open@10, t3 open@10, t4 open@10, t5 open@10, t6 open@10, t7-t11 open@20, t12-t15 open@30, t16-t19 open@40."
+    },
+    {
+      "id": "Q3",
+      "question": "Which distinct ticket IDs reopened during March 2026 after a previous closure?",
+      "sql": "SELECT DISTINCT se.ticket_id\nFROM ticket_status_events se\nJOIN ticket_events e\n  ON e.event_id = se.event_id AND e.ticket_id = se.ticket_id\nWHERE e.occurred_at >= '2026-03-01 00:00:00'\n  AND e.occurred_at < '2026-04-01 00:00:00'\n  AND se.from_status = 'closed'\n  AND se.to_status IN ('open', 'pending');",
+      "rows": [
+        [
+          3
+        ]
+      ],
+      "wrong_sql": "SELECT se.ticket_id\nFROM ticket_status_events se\nJOIN ticket_events e\n  ON e.event_id = se.event_id AND e.ticket_id = se.ticket_id\nWHERE e.occurred_at >= '2026-03-01 00:00:00'\n  AND e.occurred_at < '2026-04-01 00:00:00'\n  AND se.from_status = 'closed'\n  AND se.to_status IN ('open', 'pending');",
+      "witness": "Distinguishing fixture fact (review table, Q3): 'A ticket closed in February reopens twice in March' -> 'Its ID appears once.' Traced by hand: ticket 3 was closed 2026-02-20 00:00:00 (event 302, seq 2), then reopened 2026-03-10 10:00:00 closed->open (event 303, seq 3), closed again the same timestamp (event 304, seq 4), and reopened again the same timestamp (event 305, seq 5). Gold SQL (DISTINCT) collapses the two qualifying March reopening rows to a single row: rows = [[3]]. wrong_sql omits DISTINCT (assumes one row per reopening event rather than per distinct ticket) and returns two rows for ticket 3: [[3],[3]]. Both queries use the same half-open March window, so ticket 2's single closed->open reopening at exactly '2026-04-01 00:00:00' (event 204, seq 4) is correctly excluded by occurred_at < '2026-04-01 00:00:00' in both; ticket 1 has no prior closure (events 102 open->pending and 103 pending->closed), so it is not a reopening in either. Ordered=False: no ORDER BY required; DISTINCT set is {3}."
+    },
+    {
+      "id": "Q4",
+      "question": "Which ticket IDs had a customer message by the end of March 31, 2026, but no subsequent public human agent reply on that ticket by then?",
+      "ordered": false,
+      "sql": "WITH cust_msgs AS (SELECT e.ticket_id, e.occurred_at, e.seq, ROW_NUMBER() OVER (PARTITION BY e.ticket_id ORDER BY e.occurred_at, e.seq) AS rn FROM ticket_events e JOIN ticket_messages m ON m.event_id = e.event_id AND m.ticket_id = e.ticket_id WHERE m.author_kind = 'customer' AND e.occurred_at < '2026-04-01 00:00:00'), first_cust AS (SELECT ticket_id, occurred_at, seq FROM cust_msgs WHERE rn = 1) SELECT fc.ticket_id FROM first_cust fc WHERE NOT EXISTS (SELECT 1 FROM ticket_events e JOIN ticket_messages m ON m.event_id = e.event_id AND m.ticket_id = e.ticket_id JOIN agents a ON a.agent_id = m.author_agent_id WHERE e.ticket_id = fc.ticket_id AND m.author_kind = 'agent' AND m.visibility = 'public' AND m.is_automated = 0 AND a.is_human = 1 AND e.occurred_at < '2026-04-01 00:00:00' AND (e.occurred_at > fc.occurred_at OR (e.occurred_at = fc.occurred_at AND e.seq > fc.seq))) ORDER BY fc.ticket_id",
+      "rows": [
+        [
+          4
+        ]
+      ],
+      "wrong_sql": "WITH cust_msgs AS (SELECT e.ticket_id, e.occurred_at, e.seq, ROW_NUMBER() OVER (PARTITION BY e.ticket_id ORDER BY e.occurred_at, e.seq) AS rn FROM ticket_events e JOIN ticket_messages m ON m.event_id = e.event_id AND m.ticket_id = e.ticket_id WHERE m.author_kind = 'customer' AND e.occurred_at < '2026-04-01 00:00:00'), first_cust AS (SELECT ticket_id, occurred_at, seq FROM cust_msgs WHERE rn = 1) SELECT fc.ticket_id FROM first_cust fc WHERE NOT EXISTS (SELECT 1 FROM ticket_events e JOIN ticket_messages m ON m.event_id = e.event_id AND m.ticket_id = e.ticket_id JOIN agents a ON a.agent_id = m.author_agent_id WHERE e.ticket_id = fc.ticket_id AND m.author_kind = 'agent' AND m.is_automated = 0 AND a.is_human = 1 AND e.occurred_at < '2026-04-01 00:00:00' AND (e.occurred_at > fc.occurred_at OR (e.occurred_at = fc.occurred_at AND e.seq > fc.seq))) ORDER BY fc.ticket_id",
+      "witness": "Ticket 4 is the distinguishing fixture fact: its first customer message is event 402 (seq 2, 2026-03-10 10:00:00, public, customer 1). Before the exclusive March cutoff (occurred_at < '2026-04-01 00:00:00') it is followed only by event 403 (agent 1, human, is_automated = 0, but visibility = 'private' \u2014 a private note, not a public reply) and event 404 (author_kind = 'system', is_automated = 1 \u2014 an automated acknowledgment, not a human agent reply). Its first public human agent reply, event 405 (agent 1, public, is_automated = 0), occurs exactly at '2026-04-01 00:00:00', i.e. in April, outside the cutoff. Gold returns [[4]]. wrong_sql drops the single visibility = 'public' predicate (incorrect assumption: private agent notes count as replies), so event 403 suppresses ticket 4 and wrong_sql returns []. Ticket 5 (customer message event 502 followed by public human agent reply event 503, both 2026-03-10 10:00:00, seq 2 -> 3, agent 1 human, is_automated = 0) is excluded by both queries. All other tickets (1, 2, 3, 6-19) have no customer message before the cutoff, so neither query selects them. Q4 is unordered; the ORDER BY ticket_id only stabilizes display."
+    },
+    {
+      "id": "Q5",
+      "question": "Return up to three team IDs and their positive backlog counts at the end of March 31, 2026, ordered by count descending and then team ID ascending.",
+      "ordered": true,
+      "sql": "WITH cutoff AS (SELECT '2026-04-01 00:00:00' AS cutoff_at),\nticket_state AS (\n  SELECT t.ticket_id,\n         (SELECT se.to_status\n            FROM ticket_events e\n            JOIN ticket_status_events se ON se.event_id = e.event_id\n           WHERE e.ticket_id = t.ticket_id\n             AND e.occurred_at < (SELECT cutoff_at FROM cutoff)\n           ORDER BY e.occurred_at DESC, e.seq DESC\n           LIMIT 1) AS status,\n         (SELECT ae.to_team_id\n            FROM ticket_events e\n            JOIN ticket_assignment_events ae ON ae.event_id = e.event_id\n           WHERE e.ticket_id = t.ticket_id\n             AND e.occurred_at < (SELECT cutoff_at FROM cutoff)\n           ORDER BY e.occurred_at DESC, e.seq DESC\n           LIMIT 1) AS team_id\n    FROM tickets t\n   WHERE t.created_at < (SELECT cutoff_at FROM cutoff)\n)\nSELECT ts.team_id, COUNT(*) AS backlog_count\n  FROM ticket_state ts\n WHERE ts.status IN (SELECT status_code FROM ticket_statuses WHERE counts_as_backlog = 1)\n GROUP BY ts.team_id\nHAVING COUNT(*) > 0\n ORDER BY backlog_count DESC, ts.team_id ASC\n LIMIT 3;",
+      "rows": [
+        [
+          10,
+          6
+        ],
+        [
+          20,
+          5
+        ],
+        [
+          30,
+          4
+        ]
+      ],
+      "wrong_sql": "WITH cutoff AS (SELECT '2026-04-01 00:00:00' AS cutoff_at),\nticket_state AS (\n  SELECT t.ticket_id,\n         (SELECT se.to_status\n            FROM ticket_events e\n            JOIN ticket_status_events se ON se.event_id = e.event_id\n           WHERE e.ticket_id = t.ticket_id\n             AND e.occurred_at < (SELECT cutoff_at FROM cutoff)\n           ORDER BY e.occurred_at DESC, e.seq DESC\n           LIMIT 1) AS status,\n         (SELECT ae.to_team_id\n            FROM ticket_events e\n            JOIN ticket_assignment_events ae ON ae.event_id = e.event_id\n           WHERE e.ticket_id = t.ticket_id\n             AND e.occurred_at < (SELECT cutoff_at FROM cutoff)\n           ORDER BY e.occurred_at DESC, e.seq DESC\n           LIMIT 1) AS team_id\n    FROM tickets t\n   WHERE t.created_at < (SELECT cutoff_at FROM cutoff)\n)\nSELECT ts.team_id, COUNT(*) AS backlog_count\n  FROM ticket_state ts\n WHERE ts.status IN (SELECT status_code FROM ticket_statuses WHERE counts_as_backlog = 1)\n GROUP BY ts.team_id\nHAVING COUNT(*) > 0\n ORDER BY backlog_count DESC, ts.team_id DESC\n LIMIT 3;",
+      "witness": "Teams 30 and 40 both end the March cutoff with exactly 4 backlog tickets (team 30: tickets 12-15; team 40: tickets 16-19). The brief breaks the 4-4 tie by team ID ascending, so the third row is (30, 4); the wrong query only reverses the tie-break (ORDER BY backlog_count DESC, ts.team_id DESC) and returns (40, 4) instead. Note ticket 1 is pending (not open) at the cutoff, ticket 3 reopens twice on 2026-03-10 (seq 3 open, seq 4 closed, seq 5 open) and is counted once under team 10, and the 2026-04-01 00:00:00 events (ticket 1 close, ticket 2 transfer to team 50 and close/reopen) are excluded by the exclusive cutoff, leaving team 50 with zero backlog and out of the positive-only result."
+    },
+    {
+      "id": "Q6",
+      "question": "Which ticket IDs were open or pending at the end of March 31, 2026, and closed at the end of April 30, 2026?",
+      "sql": "WITH march_state AS (\n  SELECT t.ticket_id,\n         COALESCE((\n           SELECT se.to_status\n             FROM ticket_events e\n             JOIN ticket_status_events se ON se.event_id = e.event_id\n            WHERE e.ticket_id = t.ticket_id\n              AND e.occurred_at < '2026-04-01 00:00:00'\n            ORDER BY e.occurred_at DESC, e.seq DESC\n            LIMIT 1\n         ), 'open') AS status\n    FROM tickets t\n   WHERE t.created_at < '2026-04-01 00:00:00'\n),\napril_state AS (\n  SELECT t.ticket_id,\n         COALESCE((\n           SELECT se.to_status\n             FROM ticket_events e\n             JOIN ticket_status_events se ON se.event_id = e.event_id\n            WHERE e.ticket_id = t.ticket_id\n              AND e.occurred_at < '2026-05-01 00:00:00'\n            ORDER BY e.occurred_at DESC, e.seq DESC\n            LIMIT 1\n         ), 'open') AS status\n    FROM tickets t\n   WHERE t.created_at < '2026-05-01 00:00:00'\n)\nSELECT m.ticket_id\n  FROM march_state m\n  JOIN april_state a ON a.ticket_id = m.ticket_id\n  JOIN ticket_statuses s ON s.status_code = m.status\n WHERE s.counts_as_backlog = 1\n   AND a.status = 'closed';",
+      "rows": [
+        [
+          1
+        ]
+      ],
+      "wrong_sql": "-- Wrong assumption: 'has a status_changed to closed before the April cutoff' is treated as 'closed at the April cutoff'.\n-- It ignores a reopening that happens at the SAME timestamp as the closure but with a higher seq.\nWITH march_state AS (\n  SELECT t.ticket_id,\n         COALESCE((\n           SELECT se.to_status\n             FROM ticket_events e\n             JOIN ticket_status_events se ON se.event_id = e.event_id\n            WHERE e.ticket_id = t.ticket_id\n              AND e.occurred_at < '2026-04-01 00:00:00'\n            ORDER BY e.occurred_at DESC, e.seq DESC\n            LIMIT 1\n         ), 'open') AS status\n    FROM tickets t\n   WHERE t.created_at < '2026-04-01 00:00:00'\n)\nSELECT m.ticket_id\n  FROM march_state m\n  JOIN ticket_statuses s ON s.status_code = m.status AND s.counts_as_backlog = 1\n WHERE EXISTS (\n         SELECT 1\n           FROM ticket_events e\n           JOIN ticket_status_events se ON se.event_id = e.event_id\n          WHERE e.ticket_id = m.ticket_id\n            AND se.to_status = 'closed'\n            AND e.occurred_at >= '2026-04-01 00:00:00'\n            AND e.occurred_at < '2026-05-01 00:00:00'\n       );",
+      "witness": "Ticket 2 is the discriminator. At the March cutoff (occurred_at < 2026-04-01 00:00:00) ticket 2 is still open (its transfer 10->50 and both status changes sit exactly at 2026-04-01 00:00:00, the exclusive bound, so it is in the March backlog under team 10). In the April replay, event seq 3 closes it open->closed at 2026-04-01 00:00:00, and event seq 4 reopens it closed->open at the SAME timestamp with a higher seq. Replaying in (occurred_at, seq) order leaves ticket 2 open at the April cutoff, so gold SQL returns only ticket 1 (pending in March via seq 2 at 2026-03-10 10:00:00, then pending->closed at 2026-04-01 00:00:00 seq 3, still closed at the April cutoff). wrong_sql sees ticket 2's close event in April and wrongly returns {1, 2}. Ticket 3 also closes/reopens repeatedly but ends open at both cutoffs. No other ticket has an April status_changed to closed. Literal rows derived by hand-replay of the frozen fixture; ordered=False, so no row order is implied."
+    }
+  ],
+  "findings": [],
+  "invalid_inserts": [
+    {
+      "sql": "PRAGMA foreign_keys = ON;\nINSERT INTO ticket_assignment_events (event_id, ticket_id, from_team_id, to_team_id) VALUES (102, 1, 10, 9999);",
+      "constraint": "SQLITE_CONSTRAINT_FOREIGNKEY"
+    },
+    {
+      "sql": "INSERT INTO ticket_assignment_events (event_id, ticket_id, from_team_id, to_team_id) VALUES (555001, 1, 10, 9999);",
+      "constraint": "SQLITE_CONSTRAINT_FOREIGNKEY"
+    },
+    {
+      "sql": "INSERT INTO ticket_events (event_id, ticket_id, seq, occurred_at, event_type) VALUES (555002, 9999, 1, '2026-03-15 00:00:00', 'message');",
+      "constraint": "SQLITE_CONSTRAINT_FOREIGNKEY"
+    },
+    {
+      "sql": "INSERT INTO ticket_assignment_events (event_id, ticket_id, from_team_id, to_team_id) VALUES (402, 4, 10, 9999);",
+      "constraint": "SQLITE_CONSTRAINT_FOREIGNKEY"
+    },
+    {
+      "sql": "INSERT INTO ticket_assignment_events (event_id, ticket_id, from_team_id, to_team_id) VALUES (102, 1, 10, 999)",
+      "constraint": "SQLITE_CONSTRAINT_FOREIGNKEY"
+    },
+    {
+      "sql": "INSERT INTO ticket_assignment_events (event_id, ticket_id, from_team_id, to_team_id) VALUES (102, 1, 999, 20)",
+      "constraint": "SQLITE_CONSTRAINT_FOREIGNKEY"
+    },
+    {
+      "sql": "INSERT INTO ticket_assignment_events (event_id, ticket_id, from_team_id, to_team_id) VALUES (402, 4, NULL, 999);",
+      "constraint": "SQLITE_CONSTRAINT_FOREIGNKEY"
+    },
+    {
+      "sql": "INSERT INTO ticket_assignment_events (event_id, ticket_id, from_team_id, to_team_id) VALUES (102, 1, 10, 9999);",
+      "constraint": "SQLITE_CONSTRAINT_FOREIGNKEY"
+    }
+  ],
+  "fixture_sql": "INSERT INTO customers VALUES(1,NULL,'Synthetic User','user@example.test','2026-01-01 00:00:00');\nINSERT INTO channels VALUES(1,'web');\nINSERT INTO priorities VALUES(1,'normal',1);\nINSERT INTO teams VALUES(10,'10','2026-01-01 00:00:00',NULL);\nINSERT INTO teams VALUES(20,'20','2026-01-01 00:00:00',NULL);\nINSERT INTO teams VALUES(30,'30','2026-01-01 00:00:00',NULL);\nINSERT INTO teams VALUES(40,'40','2026-01-01 00:00:00',NULL);\nINSERT INTO teams VALUES(50,'50','2026-01-01 00:00:00',NULL);\nINSERT INTO agents VALUES(1,10,'Synthetic Agent','agent@example.test',1,'agent','2026-01-01 00:00:00');\nINSERT INTO ticket_statuses VALUES('open','open',1);\nINSERT INTO ticket_statuses VALUES('pending','pending',1);\nINSERT INTO ticket_statuses VALUES('closed','closed',0);\nINSERT INTO event_types VALUES('created','created');\nINSERT INTO event_types VALUES('status_changed','status_changed');\nINSERT INTO event_types VALUES('team_transferred','team_transferred');\nINSERT INTO event_types VALUES('message','message');\nINSERT INTO tickets VALUES(1,1,1,1,'fixture','2026-02-01 00:00:00');\nINSERT INTO ticket_events VALUES(101,1,1,'2026-02-01 00:00:00','created');\nINSERT INTO ticket_status_events VALUES(101,1,NULL,'open',NULL);\nINSERT INTO ticket_assignment_events VALUES(101,1,NULL,10);\nINSERT INTO tickets VALUES(2,1,1,1,'fixture','2026-02-01 00:00:00');\nINSERT INTO ticket_events VALUES(201,2,1,'2026-02-01 00:00:00','created');\nINSERT INTO ticket_status_events VALUES(201,2,NULL,'open',NULL);\nINSERT INTO ticket_assignment_events VALUES(201,2,NULL,10);\nINSERT INTO tickets VALUES(3,1,1,1,'fixture','2026-02-01 00:00:00');\nINSERT INTO ticket_events VALUES(301,3,1,'2026-02-01 00:00:00','created');\nINSERT INTO ticket_status_events VALUES(301,3,NULL,'open',NULL);\nINSERT INTO ticket_assignment_events VALUES(301,3,NULL,10);\nINSERT INTO tickets VALUES(4,1,1,1,'fixture','2026-02-01 00:00:00');\nINSERT INTO ticket_events VALUES(401,4,1,'2026-02-01 00:00:00','created');\nINSERT INTO ticket_status_events VALUES(401,4,NULL,'open',NULL);\nINSERT INTO ticket_assignment_events VALUES(401,4,NULL,10);\nINSERT INTO tickets VALUES(5,1,1,1,'fixture','2026-02-01 00:00:00');\nINSERT INTO ticket_events VALUES(501,5,1,'2026-02-01 00:00:00','created');\nINSERT INTO ticket_status_events VALUES(501,5,NULL,'open',NULL);\nINSERT INTO ticket_assignment_events VALUES(501,5,NULL,10);\nINSERT INTO tickets VALUES(6,1,1,1,'fixture','2026-02-01 00:00:00');\nINSERT INTO ticket_events VALUES(601,6,1,'2026-02-01 00:00:00','created');\nINSERT INTO ticket_status_events VALUES(601,6,NULL,'open',NULL);\nINSERT INTO ticket_assignment_events VALUES(601,6,NULL,10);\nINSERT INTO tickets VALUES(7,1,1,1,'fixture','2026-02-01 00:00:00');\nINSERT INTO ticket_events VALUES(701,7,1,'2026-02-01 00:00:00','created');\nINSERT INTO ticket_status_events VALUES(701,7,NULL,'open',NULL);\nINSERT INTO ticket_assignment_events VALUES(701,7,NULL,20);\nINSERT INTO tickets VALUES(8,1,1,1,'fixture','2026-02-01 00:00:00');\nINSERT INTO ticket_events VALUES(801,8,1,'2026-02-01 00:00:00','created');\nINSERT INTO ticket_status_events VALUES(801,8,NULL,'open',NULL);\nINSERT INTO ticket_assignment_events VALUES(801,8,NULL,20);\nINSERT INTO tickets VALUES(9,1,1,1,'fixture','2026-02-01 00:00:00');\nINSERT INTO ticket_events VALUES(901,9,1,'2026-02-01 00:00:00','created');\nINSERT INTO ticket_status_events VALUES(901,9,NULL,'open',NULL);\nINSERT INTO ticket_assignment_events VALUES(901,9,NULL,20);\nINSERT INTO tickets VALUES(10,1,1,1,'fixture','2026-02-01 00:00:00');\nINSERT INTO ticket_events VALUES(1001,10,1,'2026-02-01 00:00:00','created');\nINSERT INTO ticket_status_events VALUES(1001,10,NULL,'open',NULL);\nINSERT INTO ticket_assignment_events VALUES(1001,10,NULL,20);\nINSERT INTO tickets VALUES(11,1,1,1,'fixture','2026-02-01 00:00:00');\nINSERT INTO ticket_events VALUES(1101,11,1,'2026-02-01 00:00:00','created');\nINSERT INTO ticket_status_events VALUES(1101,11,NULL,'open',NULL);\nINSERT INTO ticket_assignment_events VALUES(1101,11,NULL,20);\nINSERT INTO tickets VALUES(12,1,1,1,'fixture','2026-02-01 00:00:00');\nINSERT INTO ticket_events VALUES(1201,12,1,'2026-02-01 00:00:00','created');\nINSERT INTO ticket_status_events VALUES(1201,12,NULL,'open',NULL);\nINSERT INTO ticket_assignment_events VALUES(1201,12,NULL,30);\nINSERT INTO tickets VALUES(13,1,1,1,'fixture','2026-02-01 00:00:00');\nINSERT INTO ticket_events VALUES(1301,13,1,'2026-02-01 00:00:00','created');\nINSERT INTO ticket_status_events VALUES(1301,13,NULL,'open',NULL);\nINSERT INTO ticket_assignment_events VALUES(1301,13,NULL,30);\nINSERT INTO tickets VALUES(14,1,1,1,'fixture','2026-02-01 00:00:00');\nINSERT INTO ticket_events VALUES(1401,14,1,'2026-02-01 00:00:00','created');\nINSERT INTO ticket_status_events VALUES(1401,14,NULL,'open',NULL);\nINSERT INTO ticket_assignment_events VALUES(1401,14,NULL,30);\nINSERT INTO tickets VALUES(15,1,1,1,'fixture','2026-02-01 00:00:00');\nINSERT INTO ticket_events VALUES(1501,15,1,'2026-02-01 00:00:00','created');\nINSERT INTO ticket_status_events VALUES(1501,15,NULL,'open',NULL);\nINSERT INTO ticket_assignment_events VALUES(1501,15,NULL,30);\nINSERT INTO tickets VALUES(16,1,1,1,'fixture','2026-02-01 00:00:00');\nINSERT INTO ticket_events VALUES(1601,16,1,'2026-02-01 00:00:00','created');\nINSERT INTO ticket_status_events VALUES(1601,16,NULL,'open',NULL);\nINSERT INTO ticket_assignment_events VALUES(1601,16,NULL,40);\nINSERT INTO tickets VALUES(17,1,1,1,'fixture','2026-02-01 00:00:00');\nINSERT INTO ticket_events VALUES(1701,17,1,'2026-02-01 00:00:00','created');\nINSERT INTO ticket_status_events VALUES(1701,17,NULL,'open',NULL);\nINSERT INTO ticket_assignment_events VALUES(1701,17,NULL,40);\nINSERT INTO tickets VALUES(18,1,1,1,'fixture','2026-02-01 00:00:00');\nINSERT INTO ticket_events VALUES(1801,18,1,'2026-02-01 00:00:00','created');\nINSERT INTO ticket_status_events VALUES(1801,18,NULL,'open',NULL);\nINSERT INTO ticket_assignment_events VALUES(1801,18,NULL,40);\nINSERT INTO tickets VALUES(19,1,1,1,'fixture','2026-02-01 00:00:00');\nINSERT INTO ticket_events VALUES(1901,19,1,'2026-02-01 00:00:00','created');\nINSERT INTO ticket_status_events VALUES(1901,19,NULL,'open',NULL);\nINSERT INTO ticket_assignment_events VALUES(1901,19,NULL,40);\nINSERT INTO ticket_events VALUES(102,1,2,'2026-03-10 10:00:00','status_changed');\nINSERT INTO ticket_status_events VALUES(102,1,'open','pending',NULL);\nINSERT INTO ticket_events VALUES(103,1,3,'2026-04-01 00:00:00','status_changed');\nINSERT INTO ticket_status_events VALUES(103,1,'pending','closed',NULL);\nINSERT INTO ticket_events VALUES(202,2,2,'2026-04-01 00:00:00','team_transferred');\nINSERT INTO ticket_assignment_events VALUES(202,2,10,50);\nINSERT INTO ticket_events VALUES(302,3,2,'2026-02-20 00:00:00','status_changed');\nINSERT INTO ticket_status_events VALUES(302,3,'open','closed',NULL);\nINSERT INTO ticket_events VALUES(303,3,3,'2026-03-10 10:00:00','status_changed');\nINSERT INTO ticket_status_events VALUES(303,3,'closed','open',NULL);\nINSERT INTO ticket_events VALUES(304,3,4,'2026-03-10 10:00:00','status_changed');\nINSERT INTO ticket_status_events VALUES(304,3,'open','closed',NULL);\nINSERT INTO ticket_events VALUES(305,3,5,'2026-03-10 10:00:00','status_changed');\nINSERT INTO ticket_status_events VALUES(305,3,'closed','open',NULL);\nINSERT INTO ticket_events VALUES(402,4,2,'2026-03-10 10:00:00','message');\nINSERT INTO ticket_messages VALUES(402,4,'customer',1,NULL,'public',0,NULL,'fixture');\nINSERT INTO ticket_events VALUES(403,4,3,'2026-03-10 10:00:00','message');\nINSERT INTO ticket_messages VALUES(403,4,'agent',NULL,1,'private',0,NULL,'fixture');\nINSERT INTO ticket_events VALUES(404,4,4,'2026-03-10 10:00:00','message');\nINSERT INTO ticket_messages VALUES(404,4,'system',NULL,NULL,'public',1,NULL,'fixture');\nINSERT INTO ticket_events VALUES(405,4,5,'2026-04-01 00:00:00','message');\nINSERT INTO ticket_messages VALUES(405,4,'agent',NULL,1,'public',0,NULL,'fixture');\nINSERT INTO ticket_events VALUES(502,5,2,'2026-03-10 10:00:00','message');\nINSERT INTO ticket_messages VALUES(502,5,'customer',1,NULL,'public',0,NULL,'fixture');\nINSERT INTO ticket_events VALUES(503,5,3,'2026-03-10 10:00:00','message');\nINSERT INTO ticket_messages VALUES(503,5,'agent',NULL,1,'public',0,NULL,'fixture');\nINSERT INTO ticket_events VALUES(203,2,3,'2026-04-01 00:00:00','status_changed');\nINSERT INTO ticket_status_events VALUES(203,2,'open','closed',NULL);\nINSERT INTO ticket_events VALUES(204,2,4,'2026-04-01 00:00:00','status_changed');\nINSERT INTO ticket_status_events VALUES(204,2,'closed','open',NULL);\n"
+}

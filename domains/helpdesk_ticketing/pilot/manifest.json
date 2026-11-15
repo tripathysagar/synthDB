@@ -1,0 +1,393 @@
+{
+  "status": "generated_and_validated",
+  "domain": "helpdesk_ticketing",
+  "design_model": "thinkingmachines/inkling-2-small:free",
+  "quality_review_model": "gpt-6-luna",
+  "quality_review_model_note": "An independent collaborator reviewed the finished release with gpt-6-luna, the closest available model. The requested 5.6 Luna light was not exposed in this session.",
+  "schema_sha256": "f8b545978367d8bcae5e035b39aec7ae6c7e4838f71f0c82cbf4af28310d8ab7",
+  "brief_sha256": "bdda6d7e45243702d79bf18e8d2b0bf68ce1c89306ab9fcada6dfa05dd517a45",
+  "sqlite": "3.53.0",
+  "faker": "37.12.0",
+  "seeds": {
+    "train": [
+      101,
+      104,
+      107
+    ],
+    "validation": [
+      102,
+      105,
+      108
+    ],
+    "test": [
+      103,
+      106,
+      109
+    ]
+  },
+  "question_assignment": {
+    "train": [
+      "Q1",
+      "Q2",
+      "Q3"
+    ],
+    "validation": [
+      "Q4"
+    ],
+    "test": [
+      "Q5",
+      "Q6"
+    ]
+  },
+  "prompt_counts": {
+    "train": 9,
+    "validation": 3,
+    "test": 6
+  },
+  "world_checks": [
+    {
+      "seed": 101,
+      "split": "train",
+      "tickets": 47,
+      "events": 77,
+      "all_six_sql_replay_checks": "passed",
+      "foreign_keys": "passed",
+      "integrity": "passed",
+      "snapshot_rebuild": "reproducible",
+      "scenario_facts": {
+        "march_boundary_pending_closes_april_1": true,
+        "april_1_transfer_excluded_from_march": true,
+        "team_tie_at_places_3_4": true,
+        "march_reopen_twice": true,
+        "q4_edge_cases": true,
+        "same_timestamp_close_reopen": true,
+        "created_at_cutoff_case": true
+      },
+      "all_six_wrong_query_audits": "passed",
+      "wrong_query_results": {
+        "Q1": "diverged",
+        "Q2": "diverged",
+        "Q3": "diverged",
+        "Q4": "diverged",
+        "Q5": "diverged",
+        "Q6": "diverged"
+      },
+      "foreign_key_toggle_probe": {
+        "enabled": "rejected with SQLITE_CONSTRAINT_FOREIGNKEY",
+        "disabled": "accepted then rolled back"
+      }
+    },
+    {
+      "seed": 104,
+      "split": "train",
+      "tickets": 47,
+      "events": 77,
+      "all_six_sql_replay_checks": "passed",
+      "foreign_keys": "passed",
+      "integrity": "passed",
+      "snapshot_rebuild": "reproducible",
+      "scenario_facts": {
+        "march_boundary_pending_closes_april_1": true,
+        "april_1_transfer_excluded_from_march": true,
+        "team_tie_at_places_3_4": true,
+        "march_reopen_twice": true,
+        "q4_edge_cases": true,
+        "same_timestamp_close_reopen": true,
+        "created_at_cutoff_case": true
+      },
+      "all_six_wrong_query_audits": "passed",
+      "wrong_query_results": {
+        "Q1": "diverged",
+        "Q2": "diverged",
+        "Q3": "diverged",
+        "Q4": "diverged",
+        "Q5": "diverged",
+        "Q6": "diverged"
+      },
+      "foreign_key_toggle_probe": {
+        "enabled": "rejected with SQLITE_CONSTRAINT_FOREIGNKEY",
+        "disabled": "accepted then rolled back"
+      }
+    },
+    {
+      "seed": 107,
+      "split": "train",
+      "tickets": 47,
+      "events": 77,
+      "all_six_sql_replay_checks": "passed",
+      "foreign_keys": "passed",
+      "integrity": "passed",
+      "snapshot_rebuild": "reproducible",
+      "scenario_facts": {
+        "march_boundary_pending_closes_april_1": true,
+        "april_1_transfer_excluded_from_march": true,
+        "team_tie_at_places_3_4": true,
+        "march_reopen_twice": true,
+        "q4_edge_cases": true,
+        "same_timestamp_close_reopen": true,
+        "created_at_cutoff_case": true
+      },
+      "all_six_wrong_query_audits": "passed",
+      "wrong_query_results": {
+        "Q1": "diverged",
+        "Q2": "diverged",
+        "Q3": "diverged",
+        "Q4": "diverged",
+        "Q5": "diverged",
+        "Q6": "diverged"
+      },
+      "foreign_key_toggle_probe": {
+        "enabled": "rejected with SQLITE_CONSTRAINT_FOREIGNKEY",
+        "disabled": "accepted then rolled back"
+      }
+    },
+    {
+      "seed": 102,
+      "split": "validation",
+      "tickets": 37,
+      "events": 67,
+      "all_six_sql_replay_checks": "passed",
+      "foreign_keys": "passed",
+      "integrity": "passed",
+      "snapshot_rebuild": "reproducible",
+      "scenario_facts": {
+        "march_boundary_pending_closes_april_1": true,
+        "april_1_transfer_excluded_from_march": true,
+        "team_tie_at_places_3_4": true,
+        "march_reopen_twice": true,
+        "q4_edge_cases": true,
+        "same_timestamp_close_reopen": true,
+        "created_at_cutoff_case": true
+      },
+      "all_six_wrong_query_audits": "passed",
+      "wrong_query_results": {
+        "Q1": "diverged",
+        "Q2": "diverged",
+        "Q3": "diverged",
+        "Q4": "diverged",
+        "Q5": "diverged",
+        "Q6": "diverged"
+      },
+      "foreign_key_toggle_probe": {
+        "enabled": "rejected with SQLITE_CONSTRAINT_FOREIGNKEY",
+        "disabled": "accepted then rolled back"
+      }
+    },
+    {
+      "seed": 105,
+      "split": "validation",
+      "tickets": 37,
+      "events": 67,
+      "all_six_sql_replay_checks": "passed",
+      "foreign_keys": "passed",
+      "integrity": "passed",
+      "snapshot_rebuild": "reproducible",
+      "scenario_facts": {
+        "march_boundary_pending_closes_april_1": true,
+        "april_1_transfer_excluded_from_march": true,
+        "team_tie_at_places_3_4": true,
+        "march_reopen_twice": true,
+        "q4_edge_cases": true,
+        "same_timestamp_close_reopen": true,
+        "created_at_cutoff_case": true
+      },
+      "all_six_wrong_query_audits": "passed",
+      "wrong_query_results": {
+        "Q1": "diverged",
+        "Q2": "diverged",
+        "Q3": "diverged",
+        "Q4": "diverged",
+        "Q5": "diverged",
+        "Q6": "diverged"
+      },
+      "foreign_key_toggle_probe": {
+        "enabled": "rejected with SQLITE_CONSTRAINT_FOREIGNKEY",
+        "disabled": "accepted then rolled back"
+      }
+    },
+    {
+      "seed": 108,
+      "split": "validation",
+      "tickets": 37,
+      "events": 67,
+      "all_six_sql_replay_checks": "passed",
+      "foreign_keys": "passed",
+      "integrity": "passed",
+      "snapshot_rebuild": "reproducible",
+      "scenario_facts": {
+        "march_boundary_pending_closes_april_1": true,
+        "april_1_transfer_excluded_from_march": true,
+        "team_tie_at_places_3_4": true,
+        "march_reopen_twice": true,
+        "q4_edge_cases": true,
+        "same_timestamp_close_reopen": true,
+        "created_at_cutoff_case": true
+      },
+      "all_six_wrong_query_audits": "passed",
+      "wrong_query_results": {
+        "Q1": "diverged",
+        "Q2": "diverged",
+        "Q3": "diverged",
+        "Q4": "diverged",
+        "Q5": "diverged",
+        "Q6": "diverged"
+      },
+      "foreign_key_toggle_probe": {
+        "enabled": "rejected with SQLITE_CONSTRAINT_FOREIGNKEY",
+        "disabled": "accepted then rolled back"
+      }
+    },
+    {
+      "seed": 103,
+      "split": "test",
+      "tickets": 42,
+      "events": 72,
+      "all_six_sql_replay_checks": "passed",
+      "foreign_keys": "passed",
+      "integrity": "passed",
+      "snapshot_rebuild": "reproducible",
+      "scenario_facts": {
+        "march_boundary_pending_closes_april_1": true,
+        "april_1_transfer_excluded_from_march": true,
+        "team_tie_at_places_3_4": true,
+        "march_reopen_twice": true,
+        "q4_edge_cases": true,
+        "same_timestamp_close_reopen": true,
+        "created_at_cutoff_case": true
+      },
+      "all_six_wrong_query_audits": "passed",
+      "wrong_query_results": {
+        "Q1": "diverged",
+        "Q2": "diverged",
+        "Q3": "diverged",
+        "Q4": "diverged",
+        "Q5": "diverged",
+        "Q6": "diverged"
+      },
+      "foreign_key_toggle_probe": {
+        "enabled": "rejected with SQLITE_CONSTRAINT_FOREIGNKEY",
+        "disabled": "accepted then rolled back"
+      }
+    },
+    {
+      "seed": 106,
+      "split": "test",
+      "tickets": 42,
+      "events": 72,
+      "all_six_sql_replay_checks": "passed",
+      "foreign_keys": "passed",
+      "integrity": "passed",
+      "snapshot_rebuild": "reproducible",
+      "scenario_facts": {
+        "march_boundary_pending_closes_april_1": true,
+        "april_1_transfer_excluded_from_march": true,
+        "team_tie_at_places_3_4": true,
+        "march_reopen_twice": true,
+        "q4_edge_cases": true,
+        "same_timestamp_close_reopen": true,
+        "created_at_cutoff_case": true
+      },
+      "all_six_wrong_query_audits": "passed",
+      "wrong_query_results": {
+        "Q1": "diverged",
+        "Q2": "diverged",
+        "Q3": "diverged",
+        "Q4": "diverged",
+        "Q5": "diverged",
+        "Q6": "diverged"
+      },
+      "foreign_key_toggle_probe": {
+        "enabled": "rejected with SQLITE_CONSTRAINT_FOREIGNKEY",
+        "disabled": "accepted then rolled back"
+      }
+    },
+    {
+      "seed": 109,
+      "split": "test",
+      "tickets": 42,
+      "events": 72,
+      "all_six_sql_replay_checks": "passed",
+      "foreign_keys": "passed",
+      "integrity": "passed",
+      "snapshot_rebuild": "reproducible",
+      "scenario_facts": {
+        "march_boundary_pending_closes_april_1": true,
+        "april_1_transfer_excluded_from_march": true,
+        "team_tie_at_places_3_4": true,
+        "march_reopen_twice": true,
+        "q4_edge_cases": true,
+        "same_timestamp_close_reopen": true,
+        "created_at_cutoff_case": true
+      },
+      "all_six_wrong_query_audits": "passed",
+      "wrong_query_results": {
+        "Q1": "diverged",
+        "Q2": "diverged",
+        "Q3": "diverged",
+        "Q4": "diverged",
+        "Q5": "diverged",
+        "Q6": "diverged"
+      },
+      "foreign_key_toggle_probe": {
+        "enabled": "rejected with SQLITE_CONSTRAINT_FOREIGNKEY",
+        "disabled": "accepted then rolled back"
+      }
+    }
+  ],
+  "scenario_coverage": {
+    "train": {
+      "Q1": [
+        101,
+        104,
+        107
+      ],
+      "Q2": [
+        101,
+        104,
+        107
+      ],
+      "Q3": [
+        101,
+        104,
+        107
+      ]
+    },
+    "validation": {
+      "Q4": [
+        102,
+        105,
+        108
+      ]
+    },
+    "test": {
+      "Q5": [
+        103,
+        106,
+        109
+      ],
+      "Q6": [
+        103,
+        106,
+        109
+      ]
+    }
+  },
+  "fixture_review": {
+    "gold_queries": 6,
+    "wrong_query_discriminators": 6,
+    "broken_relationship_probes": 9,
+    "result": "passed_after_verifier_compatibility_fix"
+  },
+  "dataset_layout": {
+    "solver": "<split>/world-*.sqlite, <split>/prompts.jsonl, schema.sql",
+    "evaluator_only": "evaluator/answers/<split>.jsonl"
+  },
+  "generator_authoring_note": "The seeded world generator and release builder were authored locally. The Pi CLI and OpenRouter API key were unavailable in the WSL environment; Inkling 2 Small authored the existing design artifacts.",
+  "attempt_history": {
+    "saved_design": "Pi run metadata names thinkingmachines/inkling-2-small:free; round 3 has no reviewer output.",
+    "initial_local_review": "Blocked by pi_design.verify assumptions: one witness was an object and one probe held multiple statements.",
+    "repair": "Verification normalizes witness text; the full multi-statement probe runs separately on a fresh FK-enabled database.",
+    "final_fixture_review": "6/6 gold queries matched; 6/6 wrong queries diverged; 9/9 invalid relationship probes rejected.",
+    "final_world_review": "9/9 worlds passed 6/6 gold-vs-replay checks, 6/6 wrong-query audits, integrity/FK checks, and snapshot rebuild."
+  }
+}

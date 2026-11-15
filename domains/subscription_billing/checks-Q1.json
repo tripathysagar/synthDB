@@ -1,0 +1,28 @@
+[
+  {
+    "id": "Q1",
+    "question": "For each issued, nonvoid invoice outstanding on 2026-03-31, return its ID and positive balance in cents as of that date.",
+    "sql": "SELECT i.id,\n       SUM(l.amount_cents)\n         - COALESCE((SELECT SUM(pa.amount_cents)\n                     FROM payment_allocations pa\n                     JOIN payments p ON p.id = pa.payment_id\n                     WHERE pa.invoice_id = i.id\n                       AND p.status = 'succeeded'\n                       AND pa.allocated_on <= '2026-03-31'), 0)\n         - COALESCE((SELECT SUM(ca.amount_cents)\n                     FROM credit_applications ca\n                     WHERE ca.invoice_id = i.id\n                       AND ca.applied_on <= '2026-03-31'), 0) AS balance_cents\nFROM invoices i\nJOIN invoice_lines l ON l.invoice_id = i.id\nWHERE i.status = 'issued' AND i.issued_on <= '2026-03-31'\nGROUP BY i.id\nHAVING balance_cents > 0\nORDER BY i.id;",
+    "rows": [
+      [1, 3500],
+      [2, 200],
+      [3, 4200],
+      [4, 2500],
+      [5, 3000],
+      [7, 4500],
+      [8, 1200]
+    ],
+    "wrong_sql": "SELECT i.id,\n       SUM(l.amount_cents)\n         - COALESCE((SELECT SUM(pa.amount_cents)\n                     FROM payment_allocations pa\n                     JOIN payments p ON p.id = pa.payment_id\n                     WHERE pa.invoice_id = i.id\n                       AND p.status = 'succeeded'\n                       AND pa.allocated_on <= '2026-03-31'), 0)\n         - COALESCE((SELECT SUM(ca.amount_cents)\n                     FROM credit_applications ca\n                     WHERE ca.invoice_id = i.id\n                       AND ca.applied_on <= '2026-03-31'), 0) AS balance_cents\nFROM invoices i\nJOIN invoice_lines l ON l.invoice_id = i.id\nWHERE i.issued_on <= '2026-03-31'\nGROUP BY i.id\nHAVING balance_cents > 0\nORDER BY i.id;",
+    "witness": "Invoice 6 is status 'void' (lines 9000 cents) with credit application 1500 cents applied on 2026-03-16; dropping the status = 'issued' filter adds row [6, 7500] to the result. All other rows are identical, so this fixture fact isolates the void-exclusion assumption. Balances: inv1 6500-3000=3500 (alloc 8 on 2026-04-15 excluded), inv2 3000-1800-1000=200 (credit appl 2 on 2026-03-28), inv3 8000-3000-800=4200 (alloc 3 boundary 2026-03-31 included), inv4 2500 (alloc 4 on 2026-04-10 excluded), inv5 6000-2000-1000=3000 (alloc 6 on 2026-04-05 excluded, credit appl 4 boundary 2026-03-31 included), inv7 4500 (alloc 7 on 2026-04-05 excluded), inv8 1200 (credit appl 3 on 2026-04-05 excluded)."
+  },
+  {
+    "id": "Q2",
+    "question": "Which payment IDs were successfully allocated to at least two distinct invoices by 2026-03-31?",
+    "sql": "SELECT pa.payment_id\nFROM payment_allocations pa\nJOIN payments p ON p.id = pa.payment_id\nWHERE p.status = 'succeeded' AND pa.allocated_on <= '2026-03-31'\nGROUP BY pa.payment_id\nHAVING COUNT(DISTINCT pa.invoice_id) >= 2\nORDER BY pa.payment_id;",
+    "rows": [
+      [101]
+    ],
+    "wrong_sql": "SELECT pa.payment_id\nFROM payment_allocations pa\nJOIN payments p ON p.id = pa.payment_id\nWHERE p.status = 'succeeded'\nGROUP BY pa.payment_id\nHAVING COUNT(DISTINCT pa.invoice_id) >= 2\nORDER BY pa.payment_id;",
+    "witness": "Payment 105 (succeeded, received 2026-04-05) was allocated to invoice 5 (3000 cents) and invoice 7 (1000 cents), both on 2026-04-05, which is after the 2026-03-31 cutoff; dropping the allocated_on cutoff adds row [105]. Payment 101 was allocated to invoices 1 and 2 on 2026-03-25 (within cutoff) and is the only correct answer. Failed payment 106 has no allocations, so it cannot mask this error."
+  }
+]

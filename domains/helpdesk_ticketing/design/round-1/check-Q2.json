@@ -1,0 +1,42 @@
+{
+  "check": {
+    "id": "Q2",
+    "question": "For every team existing at the end of March 31, 2026, return its ID and number of open or pending tickets it owned then, including zero.",
+    "sql": "WITH cutoff(cutoff_at) AS (SELECT '2026-04-01 00:00:00'),\ncreated AS (\n  SELECT DISTINCT e.ticket_id\n  FROM ticket_events e CROSS JOIN cutoff\n  WHERE e.event_type = 'created' AND e.occurred_at < cutoff.cutoff_at\n),\nlast_status AS (\n  SELECT x.ticket_id, x.to_status\n  FROM (\n    SELECT e.ticket_id, s.to_status,\n           ROW_NUMBER() OVER (PARTITION BY e.ticket_id ORDER BY e.occurred_at DESC, e.seq DESC) AS rn\n    FROM ticket_events e\n    JOIN ticket_status_events s ON s.event_id = e.event_id\n    CROSS JOIN cutoff\n    WHERE e.occurred_at < cutoff.cutoff_at\n  ) x\n  WHERE x.rn = 1\n),\nlast_team AS (\n  SELECT x.ticket_id, x.to_team_id\n  FROM (\n    SELECT e.ticket_id, a.to_team_id,\n           ROW_NUMBER() OVER (PARTITION BY e.ticket_id ORDER BY e.occurred_at DESC, e.seq DESC) AS rn\n    FROM ticket_events e\n    JOIN ticket_assignment_events a ON a.event_id = e.event_id\n    CROSS JOIN cutoff\n    WHERE e.occurred_at < cutoff.cutoff_at\n  ) x\n  WHERE x.rn = 1\n),\nstate AS (\n  SELECT c.ticket_id, ls.to_status, lt.to_team_id\n  FROM created c\n  JOIN last_status ls ON ls.ticket_id = c.ticket_id\n  JOIN last_team lt ON lt.ticket_id = c.ticket_id\n)\nSELECT t.team_id,\n       SUM(CASE WHEN ss.counts_as_backlog = 1 THEN 1 ELSE 0 END) AS backlog_count\nFROM teams t\nCROSS JOIN cutoff\nLEFT JOIN state s ON s.to_team_id = t.team_id\nLEFT JOIN ticket_statuses ss ON ss.status_code = s.to_status\nWHERE t.created_at < cutoff.cutoff_at\nGROUP BY t.team_id\nORDER BY t.team_id;",
+    "rows": [
+      [
+        10,
+        6
+      ],
+      [
+        20,
+        5
+      ],
+      [
+        30,
+        4
+      ],
+      [
+        40,
+        4
+      ],
+      [
+        50,
+        0
+      ]
+    ],
+    "wrong_sql": "WITH cutoff(cutoff_at) AS (SELECT '2026-04-01 00:00:00'),\ncreated AS (\n  SELECT DISTINCT e.ticket_id\n  FROM ticket_events e CROSS JOIN cutoff\n  WHERE e.event_type = 'created' AND e.occurred_at <= cutoff.cutoff_at\n),\nlast_status AS (\n  SELECT x.ticket_id, x.to_status\n  FROM (\n    SELECT e.ticket_id, s.to_status,\n           ROW_NUMBER() OVER (PARTITION BY e.ticket_id ORDER BY e.occurred_at DESC, e.seq DESC) AS rn\n    FROM ticket_events e\n    JOIN ticket_status_events s ON s.event_id = e.event_id\n    CROSS JOIN cutoff\n    WHERE e.occurred_at <= cutoff.cutoff_at\n  ) x\n  WHERE x.rn = 1\n),\nlast_team AS (\n  SELECT x.ticket_id, x.to_team_id\n  FROM (\n    SELECT e.ticket_id, a.to_team_id,\n           ROW_NUMBER() OVER (PARTITION BY e.ticket_id ORDER BY e.occurred_at DESC, e.seq DESC) AS rn\n    FROM ticket_events e\n    JOIN ticket_assignment_events a ON a.event_id = e.event_id\n    CROSS JOIN cutoff\n    WHERE e.occurred_at <= cutoff.cutoff_at\n  ) x\n  WHERE x.rn = 1\n),\nstate AS (\n  SELECT c.ticket_id, ls.to_status, lt.to_team_id\n  FROM created c\n  JOIN last_status ls ON ls.ticket_id = c.ticket_id\n  JOIN last_team lt ON lt.ticket_id = c.ticket_id\n)\nSELECT t.team_id,\n       SUM(CASE WHEN ss.counts_as_backlog = 1 THEN 1 ELSE 0 END) AS backlog_count\nFROM teams t\nCROSS JOIN cutoff\nLEFT JOIN state s ON s.to_team_id = t.team_id\nLEFT JOIN ticket_statuses ss ON ss.status_code = s.to_status\nWHERE t.created_at <= cutoff.cutoff_at\nGROUP BY t.team_id\nORDER BY t.team_id;",
+    "witness": "Ticket 2 is transferred from team 10 to team 50 at exactly 2026-04-01 00:00:00 (event 202), and ticket 1 closes at that same instant (event 103, pending->closed). The March cutoff is exclusive (occurred_at < '2026-04-01 00:00:00'), so team 10 keeps ticket 2 as open and ticket 1 stays pending: team 10 = tickets {1,2,3,4,5,6} = 6, team 20 = tickets {7,8,9,10,11} = 5, team 30 = tickets {12,13,14,15} = 4, team 40 = tickets {16,17,18,19} = 4, and team 50 (created 2026-01-01, no March tickets) = 0. The wrong inclusive '<=' cutoff replays the 2026-04-01 00:00:00 events: ticket 1 becomes closed (team 10 loses it) and ticket 2 moves to team 50 as open (ticket 2's open->closed->open pair at the same timestamp ends open), yielding team 10 = 4 and team 50 = 1. Ticket 3's events at 2026-03-10 10:00:00 (seq 3,4,5) replay to open, keeping it in team 10's backlog. Hand-replayed March states: t1 pending@10, t2 open@10, t3 open@10, t4 open@10, t5 open@10, t6 open@10, t7-t11 open@20, t12-t15 open@30, t16-t19 open@40."
+  },
+  "findings": [],
+  "invalid_inserts": [
+    {
+      "sql": "INSERT INTO ticket_assignment_events (event_id, ticket_id, from_team_id, to_team_id) VALUES (555001, 1, 10, 9999);",
+      "constraint": "SQLITE_CONSTRAINT_FOREIGNKEY"
+    },
+    {
+      "sql": "INSERT INTO ticket_events (event_id, ticket_id, seq, occurred_at, event_type) VALUES (555002, 9999, 1, '2026-03-15 00:00:00', 'message');",
+      "constraint": "SQLITE_CONSTRAINT_FOREIGNKEY"
+    }
+  ]
+}

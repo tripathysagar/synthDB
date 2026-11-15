@@ -1,0 +1,75 @@
+{
+  "check": {
+    "id": "Q1",
+    "question": "Which ticket IDs were open or pending at the end of March 31, 2026?",
+    "sql": "SELECT t.ticket_id\nFROM tickets AS t\nWHERE t.created_at < '2026-04-01 00:00:00'\n  AND (\n    SELECT s.to_status\n    FROM ticket_events AS e\n    JOIN ticket_status_events AS s ON s.event_id = e.event_id\n    WHERE e.ticket_id = t.ticket_id\n      AND e.occurred_at < '2026-04-01 00:00:00'\n    ORDER BY e.occurred_at DESC, e.seq DESC\n    LIMIT 1\n  ) IN ('open', 'pending')\nORDER BY t.ticket_id;",
+    "rows": [
+      [
+        1
+      ],
+      [
+        2
+      ],
+      [
+        3
+      ],
+      [
+        4
+      ],
+      [
+        5
+      ],
+      [
+        6
+      ],
+      [
+        7
+      ],
+      [
+        8
+      ],
+      [
+        9
+      ],
+      [
+        10
+      ],
+      [
+        11
+      ],
+      [
+        12
+      ],
+      [
+        13
+      ],
+      [
+        14
+      ],
+      [
+        15
+      ],
+      [
+        16
+      ],
+      [
+        17
+      ],
+      [
+        18
+      ],
+      [
+        19
+      ]
+    ],
+    "wrong_sql": "SELECT t.ticket_id\nFROM tickets AS t\nWHERE t.created_at <= '2026-04-01 00:00:00'\n  AND (\n    SELECT s.to_status\n    FROM ticket_events AS e\n    JOIN ticket_status_events AS s ON s.event_id = e.event_id\n    WHERE e.ticket_id = t.ticket_id\n      AND e.occurred_at <= '2026-04-01 00:00:00'\n    ORDER BY e.occurred_at DESC, e.seq DESC\n    LIMIT 1\n  ) IN ('open', 'pending')\nORDER BY t.ticket_id;",
+    "witness": "Frozen-fixture fact that separates gold from wrong: event 103 / ticket_status_events 103 moves ticket 1 from pending to closed at exactly 2026-04-01 00:00:00, and the March cutoff is exclusive (occurred_at < '2026-04-01 00:00:00'), so ticket 1 must still be pending in the March snapshot. The wrong query replays events with an inclusive cutoff (shipping assumption: the April 1 midnight boundary belongs to March), which applies event 103 and drops ticket 1, yielding rows 2-19 instead of 1-19. Hand-derived gold replay (order by occurred_at, seq): ticket 1 -> pending (event 102 applies; event 103 excluded); ticket 2 -> open (its three 2026-04-01 00:00:00 events 202/203/204 are all excluded); ticket 3 -> open (302 close, 303/305 reopens; seq 5 wins the same-timestamp tie); tickets 4-19 -> open via their created events (messages carry no status). All 19 fixture tickets were created 2026-02-01 00:00:00, before the cutoff, so none are absent. Derived by hand from the frozen fixture as printed; this review environment exposes no shell/SQLite binary, so rows are literal hand derivations cross-checked against the fixture insert ledger, not pasted query output."
+  },
+  "findings": [],
+  "invalid_inserts": [
+    {
+      "sql": "PRAGMA foreign_keys = ON;\nINSERT INTO ticket_assignment_events (event_id, ticket_id, from_team_id, to_team_id) VALUES (102, 1, 10, 9999);",
+      "constraint": "SQLITE_CONSTRAINT_FOREIGNKEY"
+    }
+  ]
+}

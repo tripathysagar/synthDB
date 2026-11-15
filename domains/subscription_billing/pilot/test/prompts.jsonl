@@ -1,0 +1,6 @@
+{"id": "Q5-103", "family": "Q5", "database": "world-103.sqlite", "question": "Return the three customers with the highest positive outstanding balances on 2026-03-31, as customer ID and balance in cents, descending by balance then ascending by ID."}
+{"id": "Q6-103", "family": "Q6", "database": "world-103.sqlite", "question": "Which nonvoid invoice IDs had a positive balance on 2026-03-31 and were fully settled by 2026-04-30?"}
+{"id": "Q5-106", "family": "Q5", "database": "world-106.sqlite", "question": "Return the three customers with the highest positive outstanding balances on 2026-03-31, as customer ID and balance in cents, descending by balance then ascending by ID."}
+{"id": "Q6-106", "family": "Q6", "database": "world-106.sqlite", "question": "Which nonvoid invoice IDs had a positive balance on 2026-03-31 and were fully settled by 2026-04-30?"}
+{"id": "Q5-109", "family": "Q5", "database": "world-109.sqlite", "question": "Return the three customers with the highest positive outstanding balances on 2026-03-31, as customer ID and balance in cents, descending by balance then ascending by ID."}
+{"id": "Q6-109", "family": "Q6", "database": "world-109.sqlite", "question": "Which nonvoid invoice IDs had a positive balance on 2026-03-31 and were fully settled by 2026-04-30?"}

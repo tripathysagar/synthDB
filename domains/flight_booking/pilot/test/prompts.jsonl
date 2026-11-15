@@ -1,0 +1,6 @@
+{"id": "43-partial_cancellations", "database": "world-43.sqlite", "family": "partial_cancellations", "question": "Which distinct booking IDs contain a passenger with both a confirmed leg and a cancelled leg?"}
+{"id": "43-confirmed_by_destination", "database": "world-43.sqlite", "family": "confirmed_by_destination", "question": "For every airport ID, count confirmed passenger legs arriving there, including zero."}
+{"id": "46-partial_cancellations", "database": "world-46.sqlite", "family": "partial_cancellations", "question": "Which distinct booking IDs contain a passenger with both a confirmed leg and a cancelled leg?"}
+{"id": "46-confirmed_by_destination", "database": "world-46.sqlite", "family": "confirmed_by_destination", "question": "For every airport ID, count confirmed passenger legs arriving there, including zero."}
+{"id": "49-partial_cancellations", "database": "world-49.sqlite", "family": "partial_cancellations", "question": "Which distinct booking IDs contain a passenger with both a confirmed leg and a cancelled leg?"}
+{"id": "49-confirmed_by_destination", "database": "world-49.sqlite", "family": "confirmed_by_destination", "question": "For every airport ID, count confirmed passenger legs arriving there, including zero."}

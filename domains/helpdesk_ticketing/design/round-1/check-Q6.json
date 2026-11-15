@@ -1,0 +1,21 @@
+{
+  "check": {
+    "id": "Q6",
+    "question": "Which ticket IDs were open or pending at the end of March 31, 2026, and closed at the end of April 30, 2026?",
+    "sql": "WITH march_state AS (\n  SELECT t.ticket_id,\n         COALESCE((\n           SELECT se.to_status\n             FROM ticket_events e\n             JOIN ticket_status_events se ON se.event_id = e.event_id\n            WHERE e.ticket_id = t.ticket_id\n              AND e.occurred_at < '2026-04-01 00:00:00'\n            ORDER BY e.occurred_at DESC, e.seq DESC\n            LIMIT 1\n         ), 'open') AS status\n    FROM tickets t\n   WHERE t.created_at < '2026-04-01 00:00:00'\n),\napril_state AS (\n  SELECT t.ticket_id,\n         COALESCE((\n           SELECT se.to_status\n             FROM ticket_events e\n             JOIN ticket_status_events se ON se.event_id = e.event_id\n            WHERE e.ticket_id = t.ticket_id\n              AND e.occurred_at < '2026-05-01 00:00:00'\n            ORDER BY e.occurred_at DESC, e.seq DESC\n            LIMIT 1\n         ), 'open') AS status\n    FROM tickets t\n   WHERE t.created_at < '2026-05-01 00:00:00'\n)\nSELECT m.ticket_id\n  FROM march_state m\n  JOIN april_state a ON a.ticket_id = m.ticket_id\n  JOIN ticket_statuses s ON s.status_code = m.status\n WHERE s.counts_as_backlog = 1\n   AND a.status = 'closed';",
+    "rows": [
+      [
+        1
+      ]
+    ],
+    "wrong_sql": "-- Wrong assumption: 'has a status_changed to closed before the April cutoff' is treated as 'closed at the April cutoff'.\n-- It ignores a reopening that happens at the SAME timestamp as the closure but with a higher seq.\nWITH march_state AS (\n  SELECT t.ticket_id,\n         COALESCE((\n           SELECT se.to_status\n             FROM ticket_events e\n             JOIN ticket_status_events se ON se.event_id = e.event_id\n            WHERE e.ticket_id = t.ticket_id\n              AND e.occurred_at < '2026-04-01 00:00:00'\n            ORDER BY e.occurred_at DESC, e.seq DESC\n            LIMIT 1\n         ), 'open') AS status\n    FROM tickets t\n   WHERE t.created_at < '2026-04-01 00:00:00'\n)\nSELECT m.ticket_id\n  FROM march_state m\n  JOIN ticket_statuses s ON s.status_code = m.status AND s.counts_as_backlog = 1\n WHERE EXISTS (\n         SELECT 1\n           FROM ticket_events e\n           JOIN ticket_status_events se ON se.event_id = e.event_id\n          WHERE e.ticket_id = m.ticket_id\n            AND se.to_status = 'closed'\n            AND e.occurred_at >= '2026-04-01 00:00:00'\n            AND e.occurred_at < '2026-05-01 00:00:00'\n       );",
+    "witness": "Ticket 2 is the discriminator. At the March cutoff (occurred_at < 2026-04-01 00:00:00) ticket 2 is still open (its transfer 10->50 and both status changes sit exactly at 2026-04-01 00:00:00, the exclusive bound, so it is in the March backlog under team 10). In the April replay, event seq 3 closes it open->closed at 2026-04-01 00:00:00, and event seq 4 reopens it closed->open at the SAME timestamp with a higher seq. Replaying in (occurred_at, seq) order leaves ticket 2 open at the April cutoff, so gold SQL returns only ticket 1 (pending in March via seq 2 at 2026-03-10 10:00:00, then pending->closed at 2026-04-01 00:00:00 seq 3, still closed at the April cutoff). wrong_sql sees ticket 2's close event in April and wrongly returns {1, 2}. Ticket 3 also closes/reopens repeatedly but ends open at both cutoffs. No other ticket has an April status_changed to closed. Literal rows derived by hand-replay of the frozen fixture; ordered=False, so no row order is implied."
+  },
+  "findings": [],
+  "invalid_inserts": [
+    {
+      "sql": "INSERT INTO ticket_assignment_events (event_id, ticket_id, from_team_id, to_team_id) VALUES (102, 1, 10, 9999);",
+      "constraint": "SQLITE_CONSTRAINT_FOREIGNKEY"
+    }
+  ]
+}

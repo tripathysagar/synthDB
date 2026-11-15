@@ -1,0 +1,21 @@
+{
+  "check": {
+    "id": "Q3",
+    "question": "Which distinct ticket IDs reopened during March 2026 after a previous closure?",
+    "sql": "SELECT DISTINCT se.ticket_id\nFROM ticket_status_events se\nJOIN ticket_events e\n  ON e.event_id = se.event_id AND e.ticket_id = se.ticket_id\nWHERE e.occurred_at >= '2026-03-01 00:00:00'\n  AND e.occurred_at < '2026-04-01 00:00:00'\n  AND se.from_status = 'closed'\n  AND se.to_status IN ('open', 'pending');",
+    "rows": [
+      [
+        3
+      ]
+    ],
+    "wrong_sql": "SELECT se.ticket_id\nFROM ticket_status_events se\nJOIN ticket_events e\n  ON e.event_id = se.event_id AND e.ticket_id = se.ticket_id\nWHERE e.occurred_at >= '2026-03-01 00:00:00'\n  AND e.occurred_at < '2026-04-01 00:00:00'\n  AND se.from_status = 'closed'\n  AND se.to_status IN ('open', 'pending');",
+    "witness": "Distinguishing fixture fact (review table, Q3): 'A ticket closed in February reopens twice in March' -> 'Its ID appears once.' Traced by hand: ticket 3 was closed 2026-02-20 00:00:00 (event 302, seq 2), then reopened 2026-03-10 10:00:00 closed->open (event 303, seq 3), closed again the same timestamp (event 304, seq 4), and reopened again the same timestamp (event 305, seq 5). Gold SQL (DISTINCT) collapses the two qualifying March reopening rows to a single row: rows = [[3]]. wrong_sql omits DISTINCT (assumes one row per reopening event rather than per distinct ticket) and returns two rows for ticket 3: [[3],[3]]. Both queries use the same half-open March window, so ticket 2's single closed->open reopening at exactly '2026-04-01 00:00:00' (event 204, seq 4) is correctly excluded by occurred_at < '2026-04-01 00:00:00' in both; ticket 1 has no prior closure (events 102 open->pending and 103 pending->closed), so it is not a reopening in either. Ordered=False: no ORDER BY required; DISTINCT set is {3}."
+  },
+  "findings": [],
+  "invalid_inserts": [
+    {
+      "sql": "INSERT INTO ticket_assignment_events (event_id, ticket_id, from_team_id, to_team_id) VALUES (402, 4, 10, 9999);",
+      "constraint": "SQLITE_CONSTRAINT_FOREIGNKEY"
+    }
+  ]
+}

@@ -1,0 +1,3 @@
+{"id": "42-empty_departures", "database": "world-42.sqlite", "family": "empty_departures", "question": "Which departure IDs have zero confirmed passengers?"}
+{"id": "45-empty_departures", "database": "world-45.sqlite", "family": "empty_departures", "question": "Which departure IDs have zero confirmed passengers?"}
+{"id": "48-empty_departures", "database": "world-48.sqlite", "family": "empty_departures", "question": "Which departure IDs have zero confirmed passengers?"}

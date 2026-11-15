@@ -1,0 +1,9 @@
+{"id": "Q1-101", "family": "Q1", "database": "world-101.sqlite", "question": "Which ticket IDs were open or pending at the end of March 31, 2026?"}
+{"id": "Q2-101", "family": "Q2", "database": "world-101.sqlite", "question": "For every team existing at the end of March 31, 2026, return its ID and number of open or pending tickets it owned then, including zero."}
+{"id": "Q3-101", "family": "Q3", "database": "world-101.sqlite", "question": "Which distinct ticket IDs reopened during March 2026 after a previous closure?"}
+{"id": "Q1-104", "family": "Q1", "database": "world-104.sqlite", "question": "Which ticket IDs were open or pending at the end of March 31, 2026?"}
+{"id": "Q2-104", "family": "Q2", "database": "world-104.sqlite", "question": "For every team existing at the end of March 31, 2026, return its ID and number of open or pending tickets it owned then, including zero."}
+{"id": "Q3-104", "family": "Q3", "database": "world-104.sqlite", "question": "Which distinct ticket IDs reopened during March 2026 after a previous closure?"}
+{"id": "Q1-107", "family": "Q1", "database": "world-107.sqlite", "question": "Which ticket IDs were open or pending at the end of March 31, 2026?"}
+{"id": "Q2-107", "family": "Q2", "database": "world-107.sqlite", "question": "For every team existing at the end of March 31, 2026, return its ID and number of open or pending tickets it owned then, including zero."}
+{"id": "Q3-107", "family": "Q3", "database": "world-107.sqlite", "question": "Which distinct ticket IDs reopened during March 2026 after a previous closure?"}

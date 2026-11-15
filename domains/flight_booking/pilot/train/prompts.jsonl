@@ -1,0 +1,9 @@
+{"id": "41-confirmed_per_departure", "database": "world-41.sqlite", "family": "confirmed_per_departure", "question": "For every departure, give its ID and the number of confirmed passenger-leg reservations, including zero."}
+{"id": "41-group_bookings", "database": "world-41.sqlite", "family": "group_bookings", "question": "Which booking IDs have more than one passenger?"}
+{"id": "41-departures_per_flight", "database": "world-41.sqlite", "family": "departures_per_flight", "question": "For each flight ID, how many departures are scheduled? Include flights with none."}
+{"id": "44-confirmed_per_departure", "database": "world-44.sqlite", "family": "confirmed_per_departure", "question": "For every departure, give its ID and the number of confirmed passenger-leg reservations, including zero."}
+{"id": "44-group_bookings", "database": "world-44.sqlite", "family": "group_bookings", "question": "Which booking IDs have more than one passenger?"}
+{"id": "44-departures_per_flight", "database": "world-44.sqlite", "family": "departures_per_flight", "question": "For each flight ID, how many departures are scheduled? Include flights with none."}
+{"id": "47-confirmed_per_departure", "database": "world-47.sqlite", "family": "confirmed_per_departure", "question": "For every departure, give its ID and the number of confirmed passenger-leg reservations, including zero."}
+{"id": "47-group_bookings", "database": "world-47.sqlite", "family": "group_bookings", "question": "Which booking IDs have more than one passenger?"}
+{"id": "47-departures_per_flight", "database": "world-47.sqlite", "family": "departures_per_flight", "question": "For each flight ID, how many departures are scheduled? Include flights with none."}

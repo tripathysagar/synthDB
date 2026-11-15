@@ -1,0 +1,6 @@
+{"id": "Q5-103", "family": "Q5", "database": "world-103.sqlite", "question": "Return up to three team IDs and their positive backlog counts at the end of March 31, 2026, ordered by count descending and then team ID ascending."}
+{"id": "Q6-103", "family": "Q6", "database": "world-103.sqlite", "question": "Which ticket IDs were open or pending at the end of March 31, 2026, and closed at the end of April 30, 2026?"}
+{"id": "Q5-106", "family": "Q5", "database": "world-106.sqlite", "question": "Return up to three team IDs and their positive backlog counts at the end of March 31, 2026, ordered by count descending and then team ID ascending."}
+{"id": "Q6-106", "family": "Q6", "database": "world-106.sqlite", "question": "Which ticket IDs were open or pending at the end of March 31, 2026, and closed at the end of April 30, 2026?"}
+{"id": "Q5-109", "family": "Q5", "database": "world-109.sqlite", "question": "Return up to three team IDs and their positive backlog counts at the end of March 31, 2026, ordered by count descending and then team ID ascending."}
+{"id": "Q6-109", "family": "Q6", "database": "world-109.sqlite", "question": "Which ticket IDs were open or pending at the end of March 31, 2026, and closed at the end of April 30, 2026?"}

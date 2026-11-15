@@ -1,0 +1,125 @@
+{
+  "revision_notes": {
+    "fixture_review_initial": "6/6 reference queries matched the initial reviewer fixture",
+    "generated_world_initial": "blocked by cross-customer FK before scoring",
+    "sql_repaired": [
+      "Q5",
+      "Q6"
+    ],
+    "final_world_checks": 54
+  },
+  "model": "thinkingmachines/inkling-2-small:free",
+  "schema_sha256": "323433925c1bfbbf7e9bb262a5c7cf3a012b6a0a0e00ffe9f569aa8975eb572e",
+  "worlds": [
+    {
+      "seed": 101,
+      "split": "train",
+      "passed_question_ids": [
+        "Q1",
+        "Q2",
+        "Q3",
+        "Q4",
+        "Q5",
+        "Q6"
+      ]
+    },
+    {
+      "seed": 104,
+      "split": "train",
+      "passed_question_ids": [
+        "Q1",
+        "Q2",
+        "Q3",
+        "Q4",
+        "Q5",
+        "Q6"
+      ]
+    },
+    {
+      "seed": 107,
+      "split": "train",
+      "passed_question_ids": [
+        "Q1",
+        "Q2",
+        "Q3",
+        "Q4",
+        "Q5",
+        "Q6"
+      ]
+    },
+    {
+      "seed": 102,
+      "split": "validation",
+      "passed_question_ids": [
+        "Q1",
+        "Q2",
+        "Q3",
+        "Q4",
+        "Q5",
+        "Q6"
+      ]
+    },
+    {
+      "seed": 105,
+      "split": "validation",
+      "passed_question_ids": [
+        "Q1",
+        "Q2",
+        "Q3",
+        "Q4",
+        "Q5",
+        "Q6"
+      ]
+    },
+    {
+      "seed": 108,
+      "split": "validation",
+      "passed_question_ids": [
+        "Q1",
+        "Q2",
+        "Q3",
+        "Q4",
+        "Q5",
+        "Q6"
+      ]
+    },
+    {
+      "seed": 103,
+      "split": "test",
+      "passed_question_ids": [
+        "Q1",
+        "Q2",
+        "Q3",
+        "Q4",
+        "Q5",
+        "Q6"
+      ]
+    },
+    {
+      "seed": 106,
+      "split": "test",
+      "passed_question_ids": [
+        "Q1",
+        "Q2",
+        "Q3",
+        "Q4",
+        "Q5",
+        "Q6"
+      ]
+    },
+    {
+      "seed": 109,
+      "split": "test",
+      "passed_question_ids": [
+        "Q1",
+        "Q2",
+        "Q3",
+        "Q4",
+        "Q5",
+        "Q6"
+      ]
+    }
+  ],
+  "faker": "37.12.0",
+  "sqlite": "3.53.0"
+}

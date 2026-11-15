@@ -1,0 +1,28 @@
+[
+  {
+    "id": "Q3",
+    "question": "Return every customer ID and its total cents of credits applied to nonvoid invoices during March 2026, including zero.",
+    "sql": "SELECT c.id AS customer_id,\n       COALESCE(SUM(CASE WHEN i.status <> 'void' THEN ca.amount_cents END), 0) AS applied_cents\nFROM customers c\nLEFT JOIN credit_applications ca\n  ON ca.customer_id = c.id\n AND ca.applied_on BETWEEN '2026-03-01' AND '2026-03-31'\nLEFT JOIN invoices i\n  ON i.id = ca.invoice_id\nGROUP BY c.id\nORDER BY c.id;",
+    "rows": [
+      [1, 1000],
+      [2, 800],
+      [3, 0],
+      [4, 1000],
+      [5, 0]
+    ],
+    "wrong_sql": "SELECT c.id AS customer_id,\n       COALESCE(SUM(ca.amount_cents), 0) AS applied_cents\nFROM customers c\nLEFT JOIN credit_applications ca\n  ON ca.customer_id = c.id\n AND ca.applied_on BETWEEN '2026-03-01' AND '2026-03-31'\nGROUP BY c.id\nORDER BY c.id;",
+    "witness": "credit_applications id=1 applies credit 201 for 1500 cents to invoice 6 (status 'void') on 2026-03-16 for customer 2; the gold SQL excludes applications to void invoices, so customer 2 totals 800 (application id=5 only), while the void-ignoring variant returns 2300. Application id=3 (700 cents, invoice 8) falls outside March 2026 (applied 2026-04-05), and customers 3 and 5 have no March applications, so the zero rows and the March cutoff are also exercised."
+  },
+  {
+    "id": "Q4",
+    "question": "Which distinct subscription IDs have at least one nonvoid invoice issued in March 2026 with two or more line items?",
+    "sql": "SELECT DISTINCT i.subscription_id\nFROM invoices i\nJOIN invoice_lines il\n  ON il.invoice_id = i.id\nWHERE i.status <> 'void'\n  AND i.issued_on BETWEEN '2026-03-01' AND '2026-03-31'\nGROUP BY i.id, i.subscription_id\nHAVING COUNT(il.id) >= 2\nORDER BY i.subscription_id;",
+    "rows": [
+      [1],
+      [2],
+      [3]
+    ],
+    "wrong_sql": "SELECT DISTINCT i.subscription_id\nFROM invoices i\nJOIN invoice_lines il\n  ON il.invoice_id = i.id\nWHERE i.status <> 'void'\n  AND i.issued_on BETWEEN '2026-03-01' AND '2026-03-31'\nGROUP BY i.id, i.subscription_id\nHAVING COUNT(il.id) >= 1\nORDER BY i.subscription_id;",
+    "witness": "Invoice 7 (subscription_id 4, issued 2026-03-28, nonvoid) has exactly one line ('Pro plan March', 4500 cents), so it fails the two-or-more threshold and subscription 4 is excluded from the gold answer; the at-least-one-line variant admits invoice 7 and wrongly adds subscription 4. Invoice 2 (subscription 1, 2026-03-20, one line), invoice 4 (subscription 3, 2026-03-25, one line) and invoice 6 (void, 2026-03-15, one line) are likewise excluded, while invoice 5 falls in February 2026; qualifying invoices are 1 (subscription 1, lines 5000+1500), 3 (subscription 2, lines 4000+4000) and 8 (subscription 3, lines 700+500)."
+  }
+]

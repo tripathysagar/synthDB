@@ -1,0 +1,96 @@
+{
+  "seed": 41,
+  "worlds_per_split": 3,
+  "faker": "37.12.0",
+  "python": "3.13.7",
+  "sqlite": "3.53.0",
+  "schema_sha256": "a3fc9020d212418cd9623a869cf08ee51c8c09cc7c28225af957171c143b081c",
+  "review": {
+    "schema_sha256": "a3fc9020d212418cd9623a869cf08ee51c8c09cc7c28225af957171c143b081c",
+    "tables": 12,
+    "foreign_keys": 14,
+    "rejected_invalid_rows": [
+      "traveler from another booking",
+      "leg from another booking",
+      "duplicate assignment",
+      "unknown status"
+    ],
+    "fixture_expected_rows": {
+      "confirmed_per_departure": [
+        [
+          10,
+          2
+        ],
+        [
+          20,
+          3
+        ],
+        [
+          30,
+          0
+        ],
+        [
+          40,
+          0
+        ]
+      ],
+      "group_bookings": [
+        [
+          1
+        ],
+        [
+          2
+        ]
+      ],
+      "empty_departures": [
+        [
+          30
+        ],
+        [
+          40
+        ]
+      ],
+      "partial_cancellations": [
+        [
+          1
+        ]
+      ],
+      "departures_per_flight": [
+        [
+          11,
+          2
+        ],
+        [
+          12,
+          2
+        ],
+        [
+          13,
+          0
+        ]
+      ],
+      "confirmed_by_destination": [
+        [
+          1,
+          3
+        ],
+        [
+          2,
+          2
+        ],
+        [
+          3,
+          0
+        ]
+      ]
+    },
+    "rejected_wrong_queries": [
+      "confirmed_per_departure",
+      "group_bookings",
+      "empty_departures",
+      "partial_cancellations",
+      "departures_per_flight",
+      "confirmed_by_destination"
+    ]
+  }
+}

@@ -1,0 +1,3 @@
+{"id": "Q3-102", "family": "Q3", "database": "world-102.sqlite", "question": "Return every customer ID and its total cents of credits applied to nonvoid invoices during March 2026, including zero."}
+{"id": "Q3-105", "family": "Q3", "database": "world-105.sqlite", "question": "Return every customer ID and its total cents of credits applied to nonvoid invoices during March 2026, including zero."}
+{"id": "Q3-108", "family": "Q3", "database": "world-108.sqlite", "question": "Return every customer ID and its total cents of credits applied to nonvoid invoices during March 2026, including zero."}

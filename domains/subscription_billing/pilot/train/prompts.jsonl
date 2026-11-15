@@ -1,0 +1,9 @@
+{"id": "Q1-101", "family": "Q1", "database": "world-101.sqlite", "question": "For each issued, nonvoid invoice outstanding on 2026-03-31, return its ID and positive balance in cents as of that date."}
+{"id": "Q2-101", "family": "Q2", "database": "world-101.sqlite", "question": "Which payment IDs were successfully allocated to at least two distinct invoices by 2026-03-31?"}
+{"id": "Q4-101", "family": "Q4", "database": "world-101.sqlite", "question": "Which distinct subscription IDs have at least one nonvoid invoice issued in March 2026 with two or more line items?"}
+{"id": "Q1-104", "family": "Q1", "database": "world-104.sqlite", "question": "For each issued, nonvoid invoice outstanding on 2026-03-31, return its ID and positive balance in cents as of that date."}
+{"id": "Q2-104", "family": "Q2", "database": "world-104.sqlite", "question": "Which payment IDs were successfully allocated to at least two distinct invoices by 2026-03-31?"}
+{"id": "Q4-104", "family": "Q4", "database": "world-104.sqlite", "question": "Which distinct subscription IDs have at least one nonvoid invoice issued in March 2026 with two or more line items?"}
+{"id": "Q1-107", "family": "Q1", "database": "world-107.sqlite", "question": "For each issued, nonvoid invoice outstanding on 2026-03-31, return its ID and positive balance in cents as of that date."}
+{"id": "Q2-107", "family": "Q2", "database": "world-107.sqlite", "question": "Which payment IDs were successfully allocated to at least two distinct invoices by 2026-03-31?"}
+{"id": "Q4-107", "family": "Q4", "database": "world-107.sqlite", "question": "Which distinct subscription IDs have at least one nonvoid invoice issued in March 2026 with two or more line items?"}

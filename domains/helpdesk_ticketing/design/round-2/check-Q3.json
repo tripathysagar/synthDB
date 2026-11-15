@@ -1,0 +1,21 @@
+{
+  "check": {
+    "id": "Q3",
+    "question": "Which distinct ticket IDs reopened during March 2026 after a previous closure?",
+    "sql": "SELECT DISTINCT tse.ticket_id FROM ticket_status_events AS tse JOIN ticket_events AS te ON te.event_id = tse.event_id AND te.ticket_id = tse.ticket_id WHERE tse.from_status = 'closed' AND tse.to_status IN ('open', 'pending') AND te.occurred_at >= '2026-03-01 00:00:00' AND te.occurred_at < '2026-04-01 00:00:00' ORDER BY tse.ticket_id;",
+    "rows": [
+      [
+        5001
+      ]
+    ],
+    "wrong_sql": "SELECT tse.ticket_id FROM ticket_status_events AS tse JOIN ticket_events AS te ON te.event_id = tse.event_id AND te.ticket_id = tse.ticket_id WHERE tse.from_status = 'closed' AND tse.to_status IN ('open', 'pending') AND te.occurred_at >= '2026-03-01 00:00:00' AND te.occurred_at < '2026-04-01 00:00:00' ORDER BY tse.ticket_id;",
+    "witness": "Fixture ticket 5001 closed 2026-02-20 (open->closed, event 50002), reopened 2026-03-05 (closed->open, event 50003), closed 2026-03-12 (open->closed, event 50004), and reopened 2026-03-25 (closed->pending, event 50005): two qualifying closed->open/pending transitions inside March 2026. The gold DISTINCT query returns exactly one row [5001]; the wrong query without DISTINCT returns [5001] twice. Ticket 5002's reopening (2026-04-05 closed->open, event 50009) and ticket 2002's reopening (2026-04-20 closed->open at the same timestamp as its closure, seq 3, event 20005) both occur after the exclusive 2026-04-01 00:00:00 March cutoff and are correctly excluded; 5001's 2026-03-28 pending->closed closure is not a reopening."
+  },
+  "findings": [],
+  "invalid_inserts": [
+    {
+      "sql": "INSERT INTO ticket_assignment_events (event_id, ticket_id, from_team_id, to_team_id) VALUES (20002, 2001, NULL, 9999);",
+      "constraint": "SQLITE_CONSTRAINT_FOREIGNKEY"
+    }
+  ]
+}

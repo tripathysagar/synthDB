@@ -1,0 +1,50 @@
+{
+  "check": {
+    "id": "Q2",
+    "question": "For every team existing at the end of March 31, 2026, return its ID and number of open or pending tickets it owned then, including zero.",
+    "sql": "WITH cutoff(c) AS (VALUES ('2026-04-01 00:00:00')), last_status AS (SELECT e.ticket_id, se.to_status AS status, ROW_NUMBER() OVER (PARTITION BY e.ticket_id ORDER BY e.occurred_at DESC, e.seq DESC) AS rn FROM ticket_status_events se JOIN ticket_events e ON e.event_id = se.event_id WHERE e.occurred_at < (SELECT c FROM cutoff)), last_team AS (SELECT e.ticket_id, ae.to_team_id AS team_id, ROW_NUMBER() OVER (PARTITION BY e.ticket_id ORDER BY e.occurred_at DESC, e.seq DESC) AS rn FROM ticket_assignment_events ae JOIN ticket_events e ON e.event_id = ae.event_id WHERE e.occurred_at < (SELECT c FROM cutoff)) SELECT et.team_id, COUNT(d.ticket_id) AS open_or_pending FROM (SELECT team_id FROM teams WHERE created_at < (SELECT c FROM cutoff)) et LEFT JOIN (SELECT ls.ticket_id, lt.team_id FROM last_status ls JOIN last_team lt ON lt.ticket_id = ls.ticket_id JOIN ticket_statuses ts ON ts.status_code = ls.status WHERE ls.rn = 1 AND lt.rn = 1 AND ts.counts_as_backlog = 1) d ON d.team_id = et.team_id GROUP BY et.team_id ORDER BY et.team_id;",
+    "rows": [
+      [
+        10,
+        6
+      ],
+      [
+        20,
+        5
+      ],
+      [
+        30,
+        4
+      ],
+      [
+        40,
+        4
+      ],
+      [
+        50,
+        1
+      ],
+      [
+        60,
+        0
+      ],
+      [
+        80,
+        0
+      ],
+      [
+        90,
+        3
+      ]
+    ],
+    "wrong_sql": "WITH cutoff(c) AS (VALUES ('2026-04-01 00:00:00')), last_status AS (SELECT e.ticket_id, se.to_status AS status, ROW_NUMBER() OVER (PARTITION BY e.ticket_id ORDER BY e.occurred_at DESC, e.seq DESC) AS rn FROM ticket_status_events se JOIN ticket_events e ON e.event_id = se.event_id WHERE e.occurred_at <= (SELECT c FROM cutoff)), last_team AS (SELECT e.ticket_id, ae.to_team_id AS team_id, ROW_NUMBER() OVER (PARTITION BY e.ticket_id ORDER BY e.occurred_at DESC, e.seq DESC) AS rn FROM ticket_assignment_events ae JOIN ticket_events e ON e.event_id = ae.event_id WHERE e.occurred_at <= (SELECT c FROM cutoff)) SELECT et.team_id, COUNT(d.ticket_id) AS open_or_pending FROM (SELECT team_id FROM teams WHERE created_at < (SELECT c FROM cutoff)) et LEFT JOIN (SELECT ls.ticket_id, lt.team_id FROM last_status ls JOIN last_team lt ON lt.ticket_id = ls.ticket_id JOIN ticket_statuses ts ON ts.status_code = ls.status WHERE ls.rn = 1 AND lt.rn = 1 AND ts.counts_as_backlog = 1) d ON d.team_id = et.team_id GROUP BY et.team_id ORDER BY et.team_id;",
+    "witness": "Ticket 4001 (event_id 40002) transfers team 50 -> 60 EXACTLY at 2026-04-01 00:00:00, the exclusive March cutoff. The March snapshot must keep 4001 under team 50 (backlog 1) and must list team 60 with zero. The wrong_sql uses an inclusive cutoff (<=), replays the midnight transfer, and reports team 50 = 0 and team 60 = 1. (Related check: ticket 3001 closes exactly at the cutoff, so it remains pending under team 90 in March; the inclusive version drops it but admits ticket 3002 created exactly at the cutoff, so team 90 coincidentally stays 3 \u2014 the 50/60 swap is the clean discriminator.)"
+  },
+  "findings": [],
+  "invalid_inserts": [
+    {
+      "sql": "PRAGMA foreign_keys = ON; INSERT INTO ticket_events (event_id, ticket_id, seq, occurred_at, event_type) VALUES (90001, 2001, 3, '2026-04-15 10:00:00', 'team_transferred'); INSERT INTO ticket_assignment_events (event_id, ticket_id, from_team_id, to_team_id) VALUES (90001, 2001, 90, 9999);",
+      "constraint": "SQLITE_CONSTRAINT_FOREIGNKEY"
+    }
+  ]
+}

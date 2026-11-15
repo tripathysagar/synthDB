@@ -1,0 +1,28 @@
+{
+  "check": {
+    "id": "Q6",
+    "question": "Which ticket IDs were open or pending at the end of March 31, 2026, and closed at the end of April 30, 2026?",
+    "sql": "WITH march AS (\n  SELECT t.ticket_id,\n         (SELECT se.to_status\n            FROM ticket_status_events se\n            JOIN ticket_events te2 ON te2.event_id = se.event_id\n           WHERE te2.ticket_id = t.ticket_id\n             AND te2.occurred_at < '2026-04-01 00:00:00'\n           ORDER BY te2.occurred_at DESC, te2.seq DESC\n           LIMIT 1) AS status_at_march\n    FROM tickets t\n),\napril AS (\n  SELECT t.ticket_id,\n         (SELECT se.to_status\n            FROM ticket_status_events se\n            JOIN ticket_events te2 ON te2.event_id = se.event_id\n           WHERE te2.ticket_id = t.ticket_id\n             AND te2.occurred_at < '2026-05-01 00:00:00'\n           ORDER BY te2.occurred_at DESC, te2.seq DESC\n           LIMIT 1) AS status_at_april\n    FROM tickets t\n)\nSELECT m.ticket_id\n  FROM march m\n  JOIN april a ON a.ticket_id = m.ticket_id\n WHERE m.status_at_march IN ('open', 'pending')\n   AND a.status_at_april = 'closed'\n ORDER BY m.ticket_id;",
+    "rows": [
+      [
+        2001
+      ],
+      [
+        3001
+      ]
+    ],
+    "wrong_sql": "WITH march AS (\n  SELECT t.ticket_id,\n         (SELECT se.to_status\n            FROM ticket_status_events se\n            JOIN ticket_events te2 ON te2.event_id = se.event_id\n           WHERE te2.ticket_id = t.ticket_id\n             AND te2.occurred_at < '2026-04-01 00:00:00'\n           ORDER BY te2.occurred_at DESC, te2.seq DESC\n           LIMIT 1) AS status_at_march\n    FROM tickets t\n)\nSELECT DISTINCT m.ticket_id\n  FROM march m\n  JOIN ticket_events te ON te.ticket_id = m.ticket_id\n  JOIN ticket_status_events se ON se.event_id = te.event_id\n WHERE m.status_at_march IN ('open', 'pending')\n   AND te.occurred_at < '2026-05-01 00:00:00'\n   AND se.to_status = 'closed'\n ORDER BY m.ticket_id;",
+    "witness": "Ticket 2002 was open at the March cutoff and closes at 2026-04-20 10:00:00 (seq 2), but it is reopened at the SAME timestamp 2026-04-20 10:00:00 (seq 3, higher ticket-local sequence number). Replaying events in (occurred_at, seq) order with occurred_at < '2026-05-01 00:00:00' leaves 2002 OPEN at the April cutoff, so it must NOT qualify; the wrong query only checks for the existence of any close event before the April cutoff and wrongly returns 2002 (2001, 2002, 3001 instead of 2001, 3001). Ticket 2001 (open at March cutoff, closed 2026-04-10 14:00:00, nothing after) and ticket 3001 (pending at March cutoff, closed by the event at exactly 2026-04-01 00:00:00, which is inside the April snapshot since only occurred_at < '2026-05-01 00:00:00' counts there and on/after the exclusive March upper bound) are the only March-backlog tickets still closed at the April cutoff. Ticket 2003 closed 2026-02-15 (before March) and 2002/4001/pool tickets are not closed at the April cutoff."
+  },
+  "findings": [],
+  "invalid_inserts": [
+    {
+      "sql": "INSERT INTO ticket_assignment_events (event_id, ticket_id, from_team_id, to_team_id) VALUES (20002, 2001, 90, 9999);",
+      "constraint": "SQLITE_CONSTRAINT_FOREIGNKEY"
+    },
+    {
+      "sql": "INSERT INTO ticket_assignment_events (event_id, ticket_id, from_team_id, to_team_id) VALUES (20004, 2002, 9999, 90);",
+      "constraint": "SQLITE_CONSTRAINT_FOREIGNKEY"
+    }
+  ]
+}

@@ -1,0 +1,147 @@
+{
+  "findings": [],
+  "fixture_sql": "INSERT INTO customers (id, name, email) VALUES\n    (1, 'Ada Lovelace', 'ada@example.com'),\n    (2, 'Ben Carter', 'ben@example.com'),\n    (3, 'Cleo Diaz', 'cleo@example.com'),\n    (4, 'Dan Ellis', 'dan@example.com'),\n    (5, 'Eve Frost', 'eve@example.com');\n\nINSERT INTO plans (id, name, billing_interval, amount_cents) VALUES\n    (1, 'Basic', 'month', 2500),\n    (2, 'Pro', 'month', 5000),\n    (3, 'Basic Annual', 'year', 24000);\n\nINSERT INTO subscriptions (id, customer_id, plan_id, status, started_on, canceled_on) VALUES\n    (1, 1, 2, 'active', '2026-01-05', NULL),\n    (2, 2, 2, 'active', '2026-01-10', NULL),\n    (3, 3, 1, 'active', '2026-02-01', NULL),\n    (4, 4, 2, 'active', '2026-02-15', NULL);\n\nINSERT INTO subscription_events (id, subscription_id, customer_id, event, occurred_on) VALUES\n    (1, 1, 1, 'started', '2026-01-05'),\n    (2, 2, 2, 'started', '2026-01-10'),\n    (3, 3, 3, 'started', '2026-02-01'),\n    (4, 4, 4, 'started', '2026-02-15');\n\nINSERT INTO invoices (id, customer_id, subscription_id, issued_on, due_on, status) VALUES\n    (1, 1, 1, '2026-03-05', '2026-04-04', 'issued'),\n    (2, 1, 1, '2026-03-20', '2026-04-19', 'issued'),\n    (3, 2, 2, '2026-03-10', '2026-04-09', 'issued'),\n    (4, 3, 3, '2026-03-25', '2026-04-24', 'issued'),\n    (5, 4, 4, '2026-02-20', '2026-03-22', 'issued'),\n    (6, 2, 2, '2026-03-15', '2026-04-14', 'void'),\n    (7, 4, 4, '2026-03-28', '2026-04-27', 'issued'),\n    (8, 3, 3, '2026-03-30', '2026-04-29', 'issued');\n\nINSERT INTO invoice_lines (id, invoice_id, description, amount_cents) VALUES\n    (1, 1, 'Pro plan March', 5000),\n    (2, 1, 'Extra seat license', 1500),\n    (3, 2, 'Additional storage add-on', 3000),\n    (4, 3, 'Pro plan March', 4000),\n    (5, 3, 'Onboarding fee', 4000),\n    (6, 4, 'Basic plan March', 2500),\n    (7, 5, 'Pro plan February', 6000),\n    (8, 6, 'Pro plan March duplicate', 9000),\n    (9, 7, 'Pro plan March', 4500),\n    (10, 8, 'Basic plan March', 700),\n    (11, 8, 'Usage overage', 500);\n\nINSERT INTO payment_methods (id, customer_id, brand, last4) VALUES\n    (1, 1, 'visa', '4242'),\n    (2, 2, 'mastercard', '5454'),\n    (3, 3, 'amex', '0005'),\n    (4, 4, 'discover', '6011');\n\nINSERT INTO payments (id, customer_id, payment_method_id, received_on, amount_cents, status) VALUES\n    (101, 1, 1, '2026-03-25', 4800, 'succeeded'),\n    (102, 2, 2, '2026-03-31', 3000, 'succeeded'),\n    (103, 3, 3, '2026-04-10', 2500, 'succeeded'),\n    (104, 4, 4, '2026-03-15', 2000, 'succeeded'),\n    (105, 4, 4, '2026-04-05', 4000, 'succeeded'),\n    (106, 2, 2, '2026-03-20', 8000, 'failed'),\n    (107, 1, 1, '2026-04-15', 3500, 'succeeded');\n\nINSERT INTO payment_allocations (id, payment_id, invoice_id, customer_id, allocated_on, amount_cents) VALUES\n    (1, 101, 1, 1, '2026-03-25', 3000),\n    (2, 101, 2, 1, '2026-03-25', 1800),\n    (3, 102, 3, 2, '2026-03-31', 3000),\n    (4, 103, 4, 3, '2026-04-10', 2500),\n    (5, 104, 5, 4, '2026-03-15', 2000),\n    (6, 105, 5, 4, '2026-04-05', 3000),\n    (7, 105, 7, 4, '2026-04-05', 1000),\n    (8, 107, 1, 1, '2026-04-15', 3500);\n\nINSERT INTO credits (id, customer_id, issued_on, reason, amount_cents) VALUES\n    (201, 2, '2026-03-08', 'billing_error', 1500),\n    (202, 1, '2026-03-18', 'promo', 1000),\n    (203, 3, '2026-04-02', 'adjustment', 700),\n    (204, 4, '2026-03-11', 'refund', 1000),\n    (205, 2, '2026-03-25', 'adjustment', 800),\n    (206, 4, '2026-04-10', 'promo', 500);\n\nINSERT INTO credit_applications (id, credit_id, invoice_id, customer_id, applied_on, amount_cents) VALUES\n    (1, 201, 6, 2, '2026-03-16', 1500),\n    (2, 202, 2, 1, '2026-03-28', 1000),\n    (3, 203, 8, 3, '2026-04-05', 700),\n    (4, 204, 5, 4, '2026-03-31', 1000),\n    (5, 205, 3, 2, '2026-03-29', 800);\n\n-- A fully paid April invoice must never enter the March ranking or Q6.\nINSERT INTO invoices VALUES (9,3,3,'2026-04-01','2026-05-01','issued');\nINSERT INTO invoice_lines VALUES (12,9,'April annual fee',12000);\nINSERT INTO payments VALUES (108,3,3,'2026-04-30',12000,'succeeded');\nINSERT INTO payment_allocations VALUES (9,108,9,3,'2026-04-30',12000);\n",
+  "checks": [
+    {
+      "id": "Q1",
+      "question": "For each issued, nonvoid invoice outstanding on 2026-03-31, return its ID and positive balance in cents as of that date.",
+      "sql": "SELECT i.id,\n       SUM(l.amount_cents)\n         - COALESCE((SELECT SUM(pa.amount_cents)\n                     FROM payment_allocations pa\n                     JOIN payments p ON p.id = pa.payment_id\n                     WHERE pa.invoice_id = i.id\n                       AND p.status = 'succeeded'\n                       AND pa.allocated_on <= '2026-03-31'), 0)\n         - COALESCE((SELECT SUM(ca.amount_cents)\n                     FROM credit_applications ca\n                     WHERE ca.invoice_id = i.id\n                       AND ca.applied_on <= '2026-03-31'), 0) AS balance_cents\nFROM invoices i\nJOIN invoice_lines l ON l.invoice_id = i.id\nWHERE i.status = 'issued' AND i.issued_on <= '2026-03-31'\nGROUP BY i.id\nHAVING balance_cents > 0\nORDER BY i.id;",
+      "rows": [
+        [
+          1,
+          3500
+        ],
+        [
+          2,
+          200
+        ],
+        [
+          3,
+          4200
+        ],
+        [
+          4,
+          2500
+        ],
+        [
+          5,
+          3000
+        ],
+        [
+          7,
+          4500
+        ],
+        [
+          8,
+          1200
+        ]
+      ],
+      "wrong_sql": "SELECT i.id,\n       SUM(l.amount_cents)\n         - COALESCE((SELECT SUM(pa.amount_cents)\n                     FROM payment_allocations pa\n                     JOIN payments p ON p.id = pa.payment_id\n                     WHERE pa.invoice_id = i.id\n                       AND p.status = 'succeeded'\n                       AND pa.allocated_on <= '2026-03-31'), 0)\n         - COALESCE((SELECT SUM(ca.amount_cents)\n                     FROM credit_applications ca\n                     WHERE ca.invoice_id = i.id\n                       AND ca.applied_on <= '2026-03-31'), 0) AS balance_cents\nFROM invoices i\nJOIN invoice_lines l ON l.invoice_id = i.id\nWHERE i.issued_on <= '2026-03-31'\nGROUP BY i.id\nHAVING balance_cents > 0\nORDER BY i.id;",
+      "witness": "Invoice 6 is status 'void' (lines 9000 cents) with credit application 1500 cents applied on 2026-03-16; dropping the status = 'issued' filter adds row [6, 7500] to the result. All other rows are identical, so this fixture fact isolates the void-exclusion assumption. Balances: inv1 6500-3000=3500 (alloc 8 on 2026-04-15 excluded), inv2 3000-1800-1000=200 (credit appl 2 on 2026-03-28), inv3 8000-3000-800=4200 (alloc 3 boundary 2026-03-31 included), inv4 2500 (alloc 4 on 2026-04-10 excluded), inv5 6000-2000-1000=3000 (alloc 6 on 2026-04-05 excluded, credit appl 4 boundary 2026-03-31 included), inv7 4500 (alloc 7 on 2026-04-05 excluded), inv8 1200 (credit appl 3 on 2026-04-05 excluded)."
+    },
+    {
+      "id": "Q2",
+      "question": "Which payment IDs were successfully allocated to at least two distinct invoices by 2026-03-31?",
+      "sql": "SELECT pa.payment_id\nFROM payment_allocations pa\nJOIN payments p ON p.id = pa.payment_id\nWHERE p.status = 'succeeded' AND pa.allocated_on <= '2026-03-31'\nGROUP BY pa.payment_id\nHAVING COUNT(DISTINCT pa.invoice_id) >= 2\nORDER BY pa.payment_id;",
+      "rows": [
+        [
+          101
+        ]
+      ],
+      "wrong_sql": "SELECT pa.payment_id\nFROM payment_allocations pa\nJOIN payments p ON p.id = pa.payment_id\nWHERE p.status = 'succeeded'\nGROUP BY pa.payment_id\nHAVING COUNT(DISTINCT pa.invoice_id) >= 2\nORDER BY pa.payment_id;",
+      "witness": "Payment 105 (succeeded, received 2026-04-05) was allocated to invoice 5 (3000 cents) and invoice 7 (1000 cents), both on 2026-04-05, which is after the 2026-03-31 cutoff; dropping the allocated_on cutoff adds row [105]. Payment 101 was allocated to invoices 1 and 2 on 2026-03-25 (within cutoff) and is the only correct answer. Failed payment 106 has no allocations, so it cannot mask this error."
+    },
+    {
+      "id": "Q3",
+      "question": "Return every customer ID and its total cents of credits applied to nonvoid invoices during March 2026, including zero.",
+      "sql": "SELECT c.id AS customer_id,\n       COALESCE(SUM(CASE WHEN i.status <> 'void' THEN ca.amount_cents END), 0) AS applied_cents\nFROM customers c\nLEFT JOIN credit_applications ca\n  ON ca.customer_id = c.id\n AND ca.applied_on BETWEEN '2026-03-01' AND '2026-03-31'\nLEFT JOIN invoices i\n  ON i.id = ca.invoice_id\nGROUP BY c.id\nORDER BY c.id;",
+      "rows": [
+        [
+          1,
+          1000
+        ],
+        [
+          2,
+          800
+        ],
+        [
+          3,
+          0
+        ],
+        [
+          4,
+          1000
+        ],
+        [
+          5,
+          0
+        ]
+      ],
+      "wrong_sql": "SELECT c.id AS customer_id,\n       COALESCE(SUM(ca.amount_cents), 0) AS applied_cents\nFROM customers c\nLEFT JOIN credit_applications ca\n  ON ca.customer_id = c.id\n AND ca.applied_on BETWEEN '2026-03-01' AND '2026-03-31'\nGROUP BY c.id\nORDER BY c.id;",
+      "witness": "credit_applications id=1 applies credit 201 for 1500 cents to invoice 6 (status 'void') on 2026-03-16 for customer 2; the gold SQL excludes applications to void invoices, so customer 2 totals 800 (application id=5 only), while the void-ignoring variant returns 2300. Application id=3 (700 cents, invoice 8) falls outside March 2026 (applied 2026-04-05), and customers 3 and 5 have no March applications, so the zero rows and the March cutoff are also exercised."
+    },
+    {
+      "id": "Q4",
+      "question": "Which distinct subscription IDs have at least one nonvoid invoice issued in March 2026 with two or more line items?",
+      "sql": "SELECT DISTINCT i.subscription_id\nFROM invoices i\nJOIN invoice_lines il\n  ON il.invoice_id = i.id\nWHERE i.status <> 'void'\n  AND i.issued_on BETWEEN '2026-03-01' AND '2026-03-31'\nGROUP BY i.id, i.subscription_id\nHAVING COUNT(il.id) >= 2\nORDER BY i.subscription_id;",
+      "rows": [
+        [
+          1
+        ],
+        [
+          2
+        ],
+        [
+          3
+        ]
+      ],
+      "wrong_sql": "SELECT DISTINCT i.subscription_id\nFROM invoices i\nJOIN invoice_lines il\n  ON il.invoice_id = i.id\nWHERE i.status <> 'void'\n  AND i.issued_on BETWEEN '2026-03-01' AND '2026-03-31'\nGROUP BY i.id, i.subscription_id\nHAVING COUNT(il.id) >= 1\nORDER BY i.subscription_id;",
+      "witness": "Invoice 7 (subscription_id 4, issued 2026-03-28, nonvoid) has exactly one line ('Pro plan March', 4500 cents), so it fails the two-or-more threshold and subscription 4 is excluded from the gold answer; the at-least-one-line variant admits invoice 7 and wrongly adds subscription 4. Invoice 2 (subscription 1, 2026-03-20, one line), invoice 4 (subscription 3, 2026-03-25, one line) and invoice 6 (void, 2026-03-15, one line) are likewise excluded, while invoice 5 falls in February 2026; qualifying invoices are 1 (subscription 1, lines 5000+1500), 3 (subscription 2, lines 4000+4000) and 8 (subscription 3, lines 700+500)."
+    },
+    {
+      "id": "Q5",
+      "question": "Return the three customers with the highest positive outstanding balances on 2026-03-31, as customer ID and balance in cents, descending by balance then ascending by ID.",
+      "sql": "WITH totals AS (\n  SELECT i.id AS invoice_id, i.customer_id, SUM(l.amount_cents) AS total_cents\n  FROM invoices i\n  JOIN invoice_lines l ON l.invoice_id = i.id\n  WHERE i.status = 'issued' AND i.issued_on <= '2026-03-31'\n  GROUP BY i.id, i.customer_id\n),\nalloc AS (\n  SELECT pa.invoice_id, SUM(pa.amount_cents) AS cents\n  FROM payment_allocations pa\n  JOIN payments p ON p.id = pa.payment_id AND p.status = 'succeeded'\n  WHERE pa.allocated_on <= '2026-03-31'\n  GROUP BY pa.invoice_id\n),\ncred AS (\n  SELECT ca.invoice_id, SUM(ca.amount_cents) AS cents\n  FROM credit_applications ca\n  WHERE ca.applied_on <= '2026-03-31'\n  GROUP BY ca.invoice_id\n)\nSELECT b.customer_id, SUM(b.balance_cents) AS balance_cents\nFROM (\n  SELECT t.customer_id,\n         t.total_cents - COALESCE(a.cents, 0) - COALESCE(c.cents, 0) AS balance_cents\n  FROM totals t\n  LEFT JOIN alloc a ON a.invoice_id = t.invoice_id\n  LEFT JOIN cred c ON c.invoice_id = t.invoice_id\n) b\nGROUP BY b.customer_id\nHAVING SUM(b.balance_cents) > 0\nORDER BY balance_cents DESC, b.customer_id ASC\nLIMIT 3;",
+      "rows": [
+        [
+          4,
+          7500
+        ],
+        [
+          2,
+          4200
+        ],
+        [
+          1,
+          3700
+        ]
+      ],
+      "wrong_sql": "WITH totals AS (\n  SELECT i.id AS invoice_id, i.customer_id, SUM(l.amount_cents) AS total_cents\n  FROM invoices i\n  JOIN invoice_lines l ON l.invoice_id = i.id\n  WHERE i.status = 'issued' AND i.issued_on <= '2026-03-31'\n  GROUP BY i.id, i.customer_id\n),\nalloc AS (\n  SELECT pa.invoice_id, SUM(pa.amount_cents) AS cents\n  FROM payment_allocations pa\n  JOIN payments p ON p.id = pa.payment_id AND p.status = 'succeeded'\n  WHERE pa.allocated_on <= '2026-03-31'\n  GROUP BY pa.invoice_id\n),\ncred AS (\n  SELECT ca.invoice_id, SUM(ca.amount_cents) AS cents\n  FROM credit_applications ca\n  WHERE ca.applied_on <= '2026-03-31'\n  GROUP BY ca.invoice_id\n)\nSELECT b.customer_id, SUM(b.balance_cents) AS balance_cents\nFROM (\n  SELECT t.customer_id,\n         t.total_cents - COALESCE(a.cents, 0) - COALESCE(c.cents, 0) AS balance_cents\n  FROM totals t\n  LEFT JOIN alloc a ON a.invoice_id = t.invoice_id\n  LEFT JOIN cred c ON c.invoice_id = t.invoice_id\n) b\nGROUP BY b.customer_id\nHAVING SUM(b.balance_cents) > 0\nORDER BY balance_cents DESC, b.customer_id DESC\nLIMIT 3;",
+      "witness": "Customers 1 and 3 both owe 3700 cents. With two higher balances, the third place goes to customer 1; reversing the ID tie-break returns customer 3."
+    },
+    {
+      "id": "Q6",
+      "question": "Which nonvoid invoice IDs had a positive balance on 2026-03-31 and were fully settled by 2026-04-30?",
+      "sql": "WITH totals AS (\n  SELECT i.id AS invoice_id, SUM(l.amount_cents) AS total_cents\n  FROM invoices i\n  JOIN invoice_lines l ON l.invoice_id = i.id\n  WHERE i.status = 'issued' AND i.issued_on <= '2026-03-31'\n  GROUP BY i.id\n),\nalloc AS (\n  SELECT pa.invoice_id,\n         SUM(CASE WHEN pa.allocated_on <= '2026-03-31' THEN pa.amount_cents ELSE 0 END) AS by_0331,\n         SUM(pa.amount_cents) AS by_0430\n  FROM payment_allocations pa\n  JOIN payments p ON p.id = pa.payment_id AND p.status = 'succeeded'\n  WHERE pa.allocated_on <= '2026-04-30'\n  GROUP BY pa.invoice_id\n),\ncred AS (\n  SELECT ca.invoice_id,\n         SUM(CASE WHEN ca.applied_on <= '2026-03-31' THEN ca.amount_cents ELSE 0 END) AS by_0331,\n         SUM(ca.amount_cents) AS by_0430\n  FROM credit_applications ca\n  WHERE ca.applied_on <= '2026-04-30'\n  GROUP BY ca.invoice_id\n)\nSELECT t.invoice_id\nFROM totals t\nLEFT JOIN alloc a ON a.invoice_id = t.invoice_id\nLEFT JOIN cred c ON c.invoice_id = t.invoice_id\nWHERE t.total_cents - COALESCE(a.by_0331, 0) - COALESCE(c.by_0331, 0) > 0\n  AND t.total_cents - COALESCE(a.by_0430, 0) - COALESCE(c.by_0430, 0) = 0\nORDER BY t.invoice_id;",
+      "rows": [
+        [
+          1
+        ],
+        [
+          4
+        ],
+        [
+          5
+        ]
+      ],
+      "wrong_sql": "WITH totals AS (\n  SELECT i.id AS invoice_id, SUM(l.amount_cents) AS total_cents\n  FROM invoices i\n  JOIN invoice_lines l ON l.invoice_id = i.id\n  WHERE i.status = 'issued' AND i.issued_on <= '2026-03-31'\n  GROUP BY i.id\n),\nalloc AS (\n  SELECT pa.invoice_id,\n         SUM(CASE WHEN pa.allocated_on <= '2026-03-31' THEN pa.amount_cents ELSE 0 END) AS by_0331,\n         SUM(pa.amount_cents) AS by_0430\n  FROM payment_allocations pa\n  JOIN payments p ON p.id = pa.payment_id AND p.status = 'succeeded'\n  WHERE pa.allocated_on <= '2026-04-30'\n  GROUP BY pa.invoice_id\n)\nSELECT t.invoice_id\nFROM totals t\nLEFT JOIN alloc a ON a.invoice_id = t.invoice_id\nWHERE t.total_cents - COALESCE(a.by_0331, 0) > 0\n  AND t.total_cents - COALESCE(a.by_0430, 0) = 0\nORDER BY t.invoice_id;",
+      "witness": "credit_applications.id = 4 (credit 204 -> invoice 5, 1000 cents applied 2026-03-31). Invoice 5 totals 6000 cents; succeeded allocations are 2000 (payment 104, 2026-03-15) + 3000 (payment 105, 2026-04-05) = 5000, so the invoice shows a positive 3000 balance on 2026-03-31 either way, but only the credit application brings it to exactly 0 by 2026-04-30; ignoring credits leaves 1000 outstanding and drops invoice 5 from the result."
+    }
+  ],
+  "invalid_inserts": [
+    {
+      "sql": "INSERT INTO payment_allocations VALUES(999,101,3,1,'2026-03-31',1)",
+      "constraint": "SQLITE_CONSTRAINT_FOREIGNKEY"
+    }
+  ]
+}

@@ -1,0 +1,3 @@
+{"id": "Q4-102", "family": "Q4", "database": "world-102.sqlite", "question": "Which ticket IDs had a customer message by the end of March 31, 2026, but no subsequent public human agent reply on that ticket by then?"}
+{"id": "Q4-105", "family": "Q4", "database": "world-105.sqlite", "question": "Which ticket IDs had a customer message by the end of March 31, 2026, but no subsequent public human agent reply on that ticket by then?"}
+{"id": "Q4-108", "family": "Q4", "database": "world-108.sqlite", "question": "Which ticket IDs had a customer message by the end of March 31, 2026, but no subsequent public human agent reply on that ticket by then?"}
